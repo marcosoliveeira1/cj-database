@@ -1,0 +1,62 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main # Gatilho: roda quando houver push na branch main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH and Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Navega para o diretório da aplicação (crie se não existir)
+          APP_DIR="/home/${{ secrets.EC2_USERNAME }}/app"
+          mkdir -p $APP_DIR
+          cd $APP_DIR
+
+          # Clona ou atualiza o repositório
+          # (Se o diretório .git já existe, faz pull, senão, clona)
+          if [ -d ".git" ] ; then
+            git pull origin main
+          else
+            # Precisa passar o token ou usar chave SSH para clonar repositório privado
+            # Para repositório público:
+            git clone https://github.com/${{ github.repository }}.git .
+            # Para repositório privado usando token (menos seguro no script):
+            # git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git .
+            # Melhor: configurar deploy keys SSH no github e na instancia
+          fi
+
+          # Cria (ou sobrescreve) o arquivo .env com os secrets do GitHub
+          # CUIDADO: Isso coloca secrets em um arquivo no servidor.
+          # Alternativas mais seguras existem (ex: AWS Secrets Manager, variáveis de ambiente diretas no compose).
+          echo "DB_USER=${{ secrets.DB_USER }}" > .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          # Adicione outras variáveis de ambiente necessárias aqui
+          echo "DB_HOST=db" >> .env # Host do DB dentro da rede Docker
+          echo "DB_PORT=5432" >> .env
+          echo "NODE_ENV=production" >> .env
+
+          # Garante que o docker compose V2 esteja disponível (ajuste o path se necessário)
+          # docker compose --version
+
+          # Para garantir que o usuário pode executar docker sem sudo (se configurado no user_data)
+          # Se falhar, pode precisar prefixar com 'sudo' e ajustar permissões/grupos
+          docker compose -f docker-compose.yml --env-file .env down || true # Para containers existentes, ignora erro se não existirem
+          docker compose -f docker-compose.yml --env-file .env pull # Baixa imagens atualizadas (se especificadas no compose, como a do postgres)
+          docker compose -f docker-compose.yml --env-file .env up --build -d # Constrói a imagem da app e sobe os containers em background
+
+          # (Opcional) Limpa imagens Docker antigas e não utilizadas
+          docker image prune -a -f
