@@ -54,3 +54,12 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+
+# terraform credencials
+.infra/.terraform/
+.infra/terraform.tfstate
+.infra/terraform.tfstate.backup
+.infra/*.tfvars # Se usar arquivos de variáveis
+*.pem # Chaves privadas SSH
+.infra/*.lock*
