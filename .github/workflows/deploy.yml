@@ -48,6 +48,9 @@ jobs:
           echo "DB_HOST=db" >> .env # Host do DB dentro da rede Docker
           echo "DB_PORT=5432" >> .env
           echo "NODE_ENV=production" >> .env
+          echo "APP_PORT=${{ secrets.APP_PORT }}" >> .env
+          echo "APP_EMAIL=${{ secrets.APP_EMAIL }}" >> .env
+          echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
 
           # Garante que o docker compose V2 esteja disponível (ajuste o path se necessário)
           # docker compose --version
