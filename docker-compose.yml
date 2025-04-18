@@ -42,7 +42,6 @@ services:
     depends_on:
       - db
     networks:
-      - app-network
       - traefik
 
   db:
@@ -56,8 +55,6 @@ services:
       - MYSQL_PASSWORD=secret
     volumes:
       - ./.db-data:/var/lib/mysql
-    networks:
-      - app-network
     ports:
       - "3306:3306"
 
@@ -65,7 +62,5 @@ volumes:
   db-data:
 
 networks:
-  app-network:
-    driver: bridge
   traefik:
-    external: true
+    driver: bridge
