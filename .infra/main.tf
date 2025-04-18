@@ -4,7 +4,7 @@ provider "aws" {
 
 # Grupo de Segurança para a Instância EC2
 resource "aws_security_group" "app_sg" {
-  name        = "app-sg"
+  name        = "app-sg-${var.aws_region}"
   description = "Permite acesso HTTP, HTTPS e SSH"
 
   # Permite acesso HTTP (porta 80) de qualquer lugar
@@ -58,25 +58,40 @@ resource "aws_instance" "app_server" {
   user_data = <<-EOF
             #!/bin/bash
             # Use yum para Amazon Linux 2
-            yum update -y
-            yum install -y docker git
-            service docker start
-            usermod -a -G docker ec2-user # Adiciona o usuário padrão ao grupo docker
-            chkconfig docker on
+            apt update -y
+            apt upgrade -y
+            # Add Docker's official GPG key:
+            apt install -y ca-certificates curl
+            install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+            chmod a+r /etc/apt/keyrings/docker.asc
 
-            # Instala Docker Compose V2 (recomendado)
-            DOCKER_CONFIG=$${{DOCKER_CONFIG:-$$HOME/.docker}
-            mkdir -p $DOCKER_CONFIG/cli-plugins
-            curl -SL https://github.com/docker/compose/releases/download/v2.17.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-            chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+            # Add the repository to Apt sources:
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+              $(. /etc/os-release && echo "$${UBUNTU_CODENAME:-$$VERSION_CODENAME}") stable" | \
+              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            apt update
+
+            apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+            systemctl start docker
+            usermod -a -G docker ubuntu # Adiciona o usuário padrão ao grupo docker
+            systemctl enable docker
+
+            ## Instala Docker Compose V2 (recomendado)
+            # DOCKER_CONFIG=$${{DOCKER_CONFIG:-$$HOME/.docker}
+            # mkdir -p $DOCKER_CONFIG/cli-plugins
+            # curl -SL https://github.com/docker/compose/releases/download/v2.17.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+            # chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
 
             # Habilita IP Forwarding (pode ser necessário para redes Docker)
             # sysctl -w net.ipv4.ip_forward=1
             # echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
             # (Opcional) Cria diretório para a aplicação
-            # mkdir /home/ec2-user/app
-            # chown ec2-user:ec2-user /home/ec2-user/app
+            # mkdir /home/ubuntu/app
+            # chown ubuntu:ubuntu /home/ubuntu/app
             EOF
 
   tags = {
