@@ -46,11 +46,14 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           # Adicione outras variáveis de ambiente necessárias aqui
           echo "DB_HOST=db" >> .env # Host do DB dentro da rede Docker
-          echo "DB_PORT=5432" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DATABASE_URL=mysql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@db:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}" >> .env
           echo "NODE_ENV=production" >> .env
           echo "APP_PORT=${{ secrets.APP_PORT }}" >> .env
           echo "APP_EMAIL=${{ secrets.APP_EMAIL }}" >> .env
           echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
+          echo "PIPEDRIVE_WEBHOOK_USER=${{ secrets.PIPEDRIVE_WEBHOOK_USER }}" >> .env
+          echo "PIPEDRIVE_WEBHOOK_PASSWORD=${{ secrets.PIPEDRIVE_WEBHOOK_PASSWORD }}" >> .env
 
           # Garante que o docker compose V2 esteja disponível (ajuste o path se necessário)
           # docker compose --version
