@@ -4,6 +4,8 @@ import { validateEnv } from '../config/validate-env';
 import { PrismaModule } from '../prisma/prisma.module'; // Import PrismaModule
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { WebhooksModule } from 'src/webhooks/webhooks.module';
+import { WebhooksController } from 'src/webhooks/webhooks.controller';
 
 @Module({
   imports: [
@@ -12,8 +14,9 @@ import { AppService } from './app.service';
       validate: validateEnv,
     }),
     PrismaModule,
+    WebhooksModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, WebhooksController],
   providers: [AppService],
 })
 export class AppModule {}
