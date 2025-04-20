@@ -4,9 +4,11 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
-  PORT: z.string().default('3000').transform(Number),
+  PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().url(),
-  CACHE_TTL_SECONDS: z.string().default('3600').transform(Number),
+  CACHE_TTL_SECONDS: z.coerce.number().default(3600),
+  PIPEDRIVE_WEBHOOK_USER: z.string().min(1),
+  PIPEDRIVE_WEBHOOK_PASSWORD: z.string().min(1),
 });
 
 export type EnvSchema = z.infer<typeof envSchema>;
