@@ -78,8 +78,6 @@ jobs:
           # Check if containers are running
           if docker compose ps | grep -q "Up"; then
             echo "✅ Deployment successful - containers are running"
-            # Optional: Add health check to your app
-            curl -s http://localhost:${{ secrets.APP_PORT }}/
           else
             echo "❌ Deployment failed - containers are not running"
             docker compose logs
