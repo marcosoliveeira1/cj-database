@@ -6,3 +6,8 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model Deal {
+  id    Int    @id
+  title String
+}

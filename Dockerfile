@@ -15,6 +15,7 @@ RUN pnpm install --frozen-lockfile
 # --- Build Stage ---
 FROM deps AS build
 COPY . .
+RUN pnpx prisma generate
 RUN pnpm build
 
 # --- Production Stage ---
