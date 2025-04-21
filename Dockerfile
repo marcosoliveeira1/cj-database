@@ -15,6 +15,7 @@ RUN pnpm install --frozen-lockfile
 # --- Build Stage ---
 FROM deps AS build
 COPY . .
+COPY prisma ./prisma
 RUN pnpx prisma generate
 RUN pnpm build
 
@@ -26,6 +27,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
 COPY package.json .
 
 EXPOSE ${APP_PORT}
