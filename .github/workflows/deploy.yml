@@ -66,3 +66,22 @@ jobs:
 
           # (Opcional) Limpa imagens Docker antigas e não utilizadas
           docker image prune -a -f
+
+    - name: Verify Deployment
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ~/app
+          # Check if containers are running
+          if docker compose ps | grep -q "Up"; then
+            echo "✅ Deployment successful - containers are running"
+            # Optional: Add health check to your app
+            curl -s http://localhost:${{ secrets.APP_PORT }}/
+          else
+            echo "❌ Deployment failed - containers are not running"
+            docker compose logs
+            exit 1
+          fi
