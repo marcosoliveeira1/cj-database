@@ -51,6 +51,8 @@ services:
       - ./.db-data:/var/lib/mysql
     ports:
       - '${DB_PORT}:3306'
+    networks:
+      - traefik
 
 volumes:
   db-data:
