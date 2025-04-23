@@ -28,3 +28,22 @@ variable "ssh_access_cidr" {
   type        = string
   default     = "0.0.0.0/0"
 }
+
+
+variable "root_volume_type"{
+  description = "Tipo do volume raiz (gp2, gp3, etc.)"
+  type        = string
+  default     = "gp3"
+}
+
+variable "root_volume_size" {
+  description = "Tamanho do volume raiz em GB"
+  type        = number
+  default     = 30
+}
+
+variable "mysql_access_cidr" {
+  description = "Bloco CIDR permitido para acesso MySQL (seu IP / 0.0.0.0/0 para qualquer IP - CUIDADO!)"
+  type        = string
+  default     = "0.0.0.0/0"
+}

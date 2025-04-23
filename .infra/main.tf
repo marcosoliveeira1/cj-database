@@ -31,6 +31,14 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = [var.ssh_access_cidr]
   }
 
+  # Permite acesso MySQL (porta 3306) a partir do CIDR definido
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [var.mysql_access_cidr]
+  }
+
   # Permite todo o tráfego de saída (necessário para baixar pacotes, imagens Docker, etc.)
   egress {
     from_port   = 0
@@ -53,46 +61,13 @@ resource "aws_instance" "app_server" {
   # Associa o Security Group criado acima
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
+  root_block_device {
+    volume_size = var.root_volume_size
+    volume_type = var.root_volume_type
+  }
+
   # User Data: Script executado na primeira inicialização da instância
-  # Instala Docker, Docker Compose e Git
-  user_data = <<-EOF
-            #!/bin/bash
-            # Use yum para Amazon Linux 2
-            apt update -y
-            apt upgrade -y
-            # Add Docker's official GPG key:
-            apt install -y ca-certificates curl
-            install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-            chmod a+r /etc/apt/keyrings/docker.asc
-
-            # Add the repository to Apt sources:
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-              $(. /etc/os-release && echo "$${UBUNTU_CODENAME:-$$VERSION_CODENAME}") stable" | \
-              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt update
-
-            apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-            systemctl start docker
-            usermod -a -G docker ubuntu # Adiciona o usuário padrão ao grupo docker
-            systemctl enable docker
-
-            ## Instala Docker Compose V2 (recomendado)
-            # DOCKER_CONFIG=$${{DOCKER_CONFIG:-$$HOME/.docker}
-            # mkdir -p $DOCKER_CONFIG/cli-plugins
-            # curl -SL https://github.com/docker/compose/releases/download/v2.17.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-            # chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
-
-            # Habilita IP Forwarding (pode ser necessário para redes Docker)
-            # sysctl -w net.ipv4.ip_forward=1
-            # echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-
-            # (Opcional) Cria diretório para a aplicação
-            # mkdir /home/ubuntu/app
-            # chown ubuntu:ubuntu /home/ubuntu/app
-            EOF
+  user_data = file("./infra/setup.sh")
 
   tags = {
     Name = "AppServerNodeJS"
