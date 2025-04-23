@@ -1,10 +1,7 @@
 #!/bin/bash
-set -e # Exit script immediately if any command fails
+set -e 
 
 echo "--- Running: 04-cleanup.sh ---"
-
-# --- Configuration Variables (Expects these to be exported by the caller) ---
-# Required: APP_DIR, ENV_FILE, COMPOSE_FILE, ACTIVE_COLOR (this is the *PREVIOUSLY* active color)
 
 cd "$APP_DIR" || exit 1
 

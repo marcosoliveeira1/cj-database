@@ -1,10 +1,7 @@
 #!/bin/bash
-set -e # Exit script immediately if any command fails
+set -e 
 
 echo "--- Running: 02-deploy-inactive.sh ---"
-
-# --- Configuration Variables (Expects these to be exported by the caller) ---
-# Required: APP_DIR, ENV_FILE, COMPOSE_FILE, INACTIVE_COLOR, APP_PORT
 
 cd "$APP_DIR" || exit 1
 
@@ -27,12 +24,11 @@ sleep 15
 echo "--- 6. Health Check for Inactive Container ($INACTIVE_COLOR) ---"
 if docker ps --filter "name=node-app-${INACTIVE_COLOR}" --filter "status=running" | grep -q "node-app-${INACTIVE_COLOR}"; then
   echo "✅ Basic Health Check: Container node-app-${INACTIVE_COLOR} is running."
-  # ADD MORE SPECIFIC HEALTH CHECKS HERE (e.g., curl internal endpoint)
 else
   echo "❌ Basic Health Check Failed: Container node-app-${INACTIVE_COLOR} did not start correctly!"
   echo "--- Logs for node-app-${INACTIVE_COLOR} ---"
   docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs "app_${INACTIVE_COLOR}" || echo "Could not get logs."
-  exit 1 # Fail the deployment
+  exit 1 
 fi
 
 echo "--- Finished: 02-deploy-inactive.sh ---"

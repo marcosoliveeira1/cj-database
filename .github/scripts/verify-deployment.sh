@@ -1,11 +1,7 @@
 
 #!/bin/bash
-# No 'set -e' here, we want to report specific failures
 
 echo "--- Running: verify-deployment.sh ---"
-
-# --- Configuration Variables (Expects these to be exported by the caller) ---
-# Required: APP_DIR, MARKER_FILE, ENV_FILE, COMPOSE_FILE, APP_DOMAIN
 
 cd "$APP_DIR" || exit 1
 
@@ -18,7 +14,6 @@ fi
 FINAL_ACTIVE_COLOR=$(cat "$MARKER_FILE")
 echo "Verifying active color: $FINAL_ACTIVE_COLOR"
 
-# Check container statuses
 echo "Checking container statuses..."
 TRAEFIK_STATUS=$(docker ps --filter "name=traefik" --filter "status=running" --format "{{.Names}}")
 DB_STATUS=$(docker ps --filter "name=mysql-db" --filter "status=running" --format "{{.Names}}")
@@ -41,7 +36,7 @@ else
    echo "✅ All essential containers (Traefik, DB, Active App: $FINAL_ACTIVE_COLOR) are running."
 fi
 
-# Check endpoint accessibility via curl
+
 echo "Attempting to curl https://${APP_DOMAIN}..."
 RETRY_COUNT=0
 MAX_RETRIES=3

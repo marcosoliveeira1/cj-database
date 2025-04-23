@@ -1,4 +1,3 @@
-# .github/workflows/deploy.yml
 name: Deploy Blue/Green to EC2
 
 on:
@@ -12,9 +11,8 @@ jobs:
     environment: production
 
     steps:
-    - name: Checkout code
+    - name: Checkout code on Runner
       uses: actions/checkout@v3
-      # Ensure scripts are checked out
 
     - name: Deploy to EC2
       uses: appleboy/ssh-action@master
@@ -27,15 +25,52 @@ jobs:
 
           # --- Define Core Variables ---
           export APP_DIR="/home/${{ secrets.EC2_USERNAME }}/app"
-          export EC2_USERNAME="${{ secrets.EC2_USERNAME }}" # Pass username if needed inside scripts
-          export REPO_NAME="${{ github.repository }}"      # Pass repo name for clone command
+          export EC2_USERNAME="${{ secrets.EC2_USERNAME }}"
+          export REPO_NAME="${{ github.repository }}"
           export ENV_FILE="$APP_DIR/.env"
           export COMPOSE_FILE="$APP_DIR/docker-compose.yml"
           export TRAEFIK_DATA_DIR="$APP_DIR/traefik-data"
           export MARKER_FILE="$APP_DIR/active_color.txt"
 
+          # --- 1. Ensure Base Directory Exists ---
+          # This needs to happen before cloning/pulling into it
+          echo "--- Ensuring deployment directory exists: $APP_DIR ---"
+          mkdir -p "$APP_DIR"
+          cd "$APP_DIR" || exit 1 # Change directory *before* git operations
+
+          # --- 2. Update Code on EC2 Instance ---
+          # This block is moved from 01-prepare-env.sh
+          echo "--- Updating Code ---"
+          if [ -d ".git" ] ; then
+            echo "Git repository exists, pulling changes from origin main..."
+            # Optional: Stash local changes like .env if they aren't gitignored
+            # git stash push -- $ENV_FILE || true
+            git fetch origin main
+            git reset --hard origin/main # Overwrite local changes
+            # Optional: Restore stashed files
+            # git stash pop || true
+          else
+            echo "Cloning repository: $REPO_NAME..."
+            # Backup existing env if needed before clone potentially wipes directory
+            [ -f "$ENV_FILE" ] && mv "$ENV_FILE" "$APP_DIR/../.env.backup.$(date +%s)" && echo "Backed up existing .env" || true
+            # Clone using SSH (ensure EC2 has SSH key access to GitHub repo)
+            git clone "git@github.com:$REPO_NAME.git" .
+            # Restore backup env if it exists
+            BACKUP_ENV=$(ls -t "$APP_DIR"/../.env.backup.* 2>/dev/null | head -n 1)
+            [ -f "$BACKUP_ENV" ] && mv "$BACKUP_ENV" "$ENV_FILE" && echo "Restored backed up .env" || true
+          fi
+          # --- Code is now present on EC2 in $APP_DIR ---
+
+          # --- Define Path to Scripts (Now that code exists) ---
+          # This must come *after* the git clone/pull
+          export SCRIPT_DIR="$APP_DIR/.github/scripts"
+          if [ ! -d "$SCRIPT_DIR" ]; then
+              echo "ERROR: Script directory '$SCRIPT_DIR' not found after code update."
+              ls -la "$APP_DIR" # List directory contents for debugging
+              exit 1
+          fi
+
           # --- Pass Secrets as Environment Variables for the scripts ---
-          # These will be available to the scripts executed below
           export APP_DOMAIN="${{ secrets.APP_DOMAIN }}"
           export APP_EMAIL="${{ secrets.APP_EMAIL }}"
           export APP_PORT="${{ secrets.APP_PORT }}"
@@ -47,18 +82,11 @@ jobs:
           export PIPEDRIVE_WEBHOOK_USER="${{ secrets.PIPEDRIVE_WEBHOOK_USER }}"
           export PIPEDRIVE_WEBHOOK_PASSWORD="${{ secrets.PIPEDRIVE_WEBHOOK_PASSWORD }}"
 
-          # --- Get Path to Scripts ---
-          # Assuming scripts are in .github/scripts/ relative to repo root
-          # The checkout action puts the code in GITHUB_WORKSPACE
-          # Adjust this path if you place scripts elsewhere
-          SCRIPT_DIR="$APP_DIR/.github/scripts"
-
-          # --- Execute Deployment Steps ---
+          # --- Execute Deployment Steps Using Scripts ---
           echo "Executing 01-prepare-env.sh..."
           bash "$SCRIPT_DIR/01-prepare-env.sh"
 
           # Load the determined colors from the temp files created by the script
-          # These will be exported and available to subsequent scripts in this session
           export INACTIVE_COLOR=$(cat /tmp/inactive_color.txt)
           export ACTIVE_COLOR=$(cat /tmp/active_color.txt)
           # ACTIVE_PRIORITY and INACTIVE_PRIORITY were also exported within 01-prepare-env.sh
@@ -70,13 +98,13 @@ jobs:
           bash "$SCRIPT_DIR/03-switch-traffic.sh"
 
           echo "Executing 04-cleanup.sh (using previous active color: $ACTIVE_COLOR)..."
-          bash "$SCRIPT_DIR/04-cleanup.sh" # Note: ACTIVE_COLOR here is the one *before* the switch
+          bash "$SCRIPT_DIR/04-cleanup.sh"
 
           echo "--- Deployment Script Execution Completed ---"
 
 
     - name: Verify Deployment
-      if: success() # Only run if the deployment step succeeded
+      if: success()
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
@@ -93,7 +121,12 @@ jobs:
           export APP_DOMAIN="${{ secrets.APP_DOMAIN }}"
 
           # --- Get Path to Scripts ---
-          SCRIPT_DIR="$APP_DIR/.github/scripts"
+          # Code should already exist from the previous step
+          export SCRIPT_DIR="$APP_DIR/.github/scripts"
+          if [ ! -d "$SCRIPT_DIR" ]; then
+              echo "ERROR: Script directory '$SCRIPT_DIR' not found for verification."
+              exit 1
+          fi
 
           # --- Execute Verification Script ---
           echo "Executing verify-deployment.sh..."
