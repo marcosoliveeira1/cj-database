@@ -1,62 +1,141 @@
+# docker-compose.yml
+# Defines the services for Traefik, Blue/Green app instances, and the database.
+# Uses environment variables from .env for configuration.
+
 services:
   traefik:
     image: traefik:latest
     container_name: traefik
     restart: unless-stopped
     command:
+      # API and Dashboard
       - '--api.dashboard=true'
+      # Docker Provider Configuration
       - '--providers.docker=true'
       - '--providers.docker.exposedbydefault=false'
+      # Entrypoints
       - '--entrypoints.web.address=:80'
       - '--entrypoints.websecure.address=:443'
+      # Let's Encrypt Configuration (using HTTP challenge)
       - '--certificatesresolvers.myresolver.acme.httpchallenge=true'
       - '--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web'
-      - '--certificatesresolvers.myresolver.acme.email=${APP_EMAIL}'
+      # Let's Encrypt Email (Required - must be set in .env)
+      - '--certificatesresolvers.myresolver.acme.email=${APP_EMAIL?Variable APP_EMAIL is not set in .env}'
+      # Let's Encrypt Storage
       - '--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json'
+      # Log level (optional, useful for debugging)
+      # - '--log.level=DEBUG'
+      # Access Logs (optional)
+      # - '--accesslog=true'
+      # - '--accesslog.filepath=/logs/access.log'
     ports:
-      - '80:80'
-      - '443:443'
+      - '80:80'    # HTTP entrypoint
+      - '443:443'  # HTTPS entrypoint
+      # - '8080:8080' # Optional: Expose Traefik API/Dashboard (secure it below)
     volumes:
+      # Mount Docker socket to allow Traefik to detect container changes
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./.traefik/acme.json:/letsencrypt/acme.json
+      # Mount volume for Let's Encrypt certificates
+      - ./traefik-data/acme.json:/letsencrypt/acme.json
+      # Mount volume for access logs (if enabled in command)
+      # - ./traefik-logs:/logs
     networks:
       - traefik
-
-  app:
-    build: .
-    container_name: node-app
-    restart: unless-stopped
-    env_file: .env
+    # Labels for Traefik Dashboard (Optional, but useful)
     labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.app.rule=Host(`${APP_DOMAIN}`)'
-      - 'traefik.http.routers.app.entrypoints=websecure'
-      - 'traefik.http.routers.app.tls.certresolver=myresolver'
-      - 'traefik.http.services.app.loadbalancer.server.port=${APP_PORT}'
+      - "traefik.enable=true"
+      # Rule to access dashboard via a subdomain (requires DNS setup for traefik.yourdomain.com)
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      # Add Basic Authentication middleware for security
+      # Generate user:pass hash: echo $(htpasswd -nb your_user your_password) | sed -e s/\\$/\\$\\$/g
+      # Store the result in GitHub Secret: TRAEFIK_AUTH_USER_PASS
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH_USER_PASS?Variable TRAEFIK_AUTH_USER_PASS is not set in .env}"
+      - "traefik.http.routers.traefik-dashboard.middlewares=traefik-auth"
+
+  # --- Blue Application Instance ---
+  app_blue:
+    build: . # Build the image from Dockerfile in the current directory
+    # No 'image:' line - build locally, don't try to pull 'node-app'
+    container_name: node-app-blue
+    restart: unless-stopped
+    env_file: .env # Load shared environment variables
+    environment:
+      - APP_COLOR=blue # Identify the instance color
+      - APP_PORT=${APP_PORT?Variable APP_PORT is not set in .env} # Ensure APP_PORT is defined
+      # NODE_ENV is usually set in .env, but can be overridden here if needed
+      # - NODE_ENV=production
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+      # Blue Router: Matches the main domain, priority controlled by .env
+      - "traefik.http.routers.app_blue.rule=Host(`${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
+      - "traefik.http.routers.app_blue.entrypoints=websecure" # Use HTTPS entrypoint
+      - "traefik.http.routers.app_blue.tls.certresolver=myresolver" # Use Let's Encrypt resolver
+      - "traefik.http.routers.app_blue.priority=${BLUE_PRIORITY:-5}" # Priority set via .env (default 5)
+      - "traefik.http.routers.app_blue.service=app_blue_svc" # Route to the blue service
+      # Blue Service: Defines how Traefik connects to this container
+      - "traefik.http.services.app_blue_svc.loadbalancer.server.port=${APP_PORT}" # Forward to the app's internal port
+    depends_on:
+      - db # Ensure database is started before the app
+    networks:
+      - traefik # Connect to the Traefik network
+
+  # --- Green Application Instance ---
+  app_green:
+    build: . # Build the image from Dockerfile in the current directory
+    # No 'image:' line - build locally, don't try to pull 'node-app'
+    container_name: node-app-green
+    restart: unless-stopped
+    env_file: .env # Load shared environment variables
+    environment:
+      - APP_COLOR=green # Identify the instance color
+      - APP_PORT=${APP_PORT?Variable APP_PORT is not set in .env} # Ensure APP_PORT is defined
+      # - NODE_ENV=production
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+      # Green Router: Matches the main domain, priority controlled by .env
+      - "traefik.http.routers.app_green.rule=Host(`${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
+      - "traefik.http.routers.app_green.entrypoints=websecure"
+      - "traefik.http.routers.app_green.tls.certresolver=myresolver"
+      - "traefik.http.routers.app_green.priority=${GREEN_PRIORITY:-5}" # Priority set via .env (default 5)
+      - "traefik.http.routers.app_green.service=app_green_svc" # Route to the green service
+      # Green Service: Defines how Traefik connects to this container
+      - "traefik.http.services.app_green_svc.loadbalancer.server.port=${APP_PORT}"
     depends_on:
       - db
     networks:
       - traefik
 
+  # --- Database Service ---
   db:
-    image: mysql:8.0
+    image: mysql:8.0 # Use official MySQL 8 image
     container_name: mysql-db
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+      # Database credentials loaded from .env file (ensure they are set!)
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD?Variable DB_ROOT_PASSWORD is not set in .env} # Recommended to use root pw secret
+      - MYSQL_DATABASE=${DB_NAME?Variable DB_NAME is not set in .env}
+      - MYSQL_USER=${DB_USER?Variable DB_USER is not set in .env}
+      - MYSQL_PASSWORD=${DB_PASSWORD?Variable DB_PASSWORD is not set in .env}
     volumes:
-      - ./.db-data:/var/lib/mysql
+      # Persist database data using a named volume
+      - db-data:/var/lib/mysql
+    # Exposing the port to the host is NOT required for container-to-container communication
+    # It can be useful for debugging or external tools, but increases attack surface.
     ports:
-      - '${DB_PORT}:3306'
+      - '${DB_HOST_PORT:-3306}:3306' # Example: Map host port 3306 to container port 3306
     networks:
-      - traefik
+      - traefik # Allow app containers to reach the db via hostname 'db'
 
+# Named volume for persisting database data
 volumes:
   db-data:
 
+# Shared network for communication between containers
 networks:
   traefik:
-    driver: bridge
+    driver: bridge # Default bridge network driver

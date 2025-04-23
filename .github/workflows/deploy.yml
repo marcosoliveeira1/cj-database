@@ -1,4 +1,5 @@
-name: Deploy to EC2
+# .github/workflows/deploy.yml
+name: Deploy Blue/Green to EC2
 
 on:
   push:
@@ -8,80 +9,94 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      # Ensure scripts are checked out
 
-    - name: Setup SSH and Deploy
+    - name: Deploy to EC2
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Navega para o diretório da aplicação (crie se não existir)
-          APP_DIR="/home/${{ secrets.EC2_USERNAME }}/app"
-          mkdir -p $APP_DIR
-          cd $APP_DIR
+          set -e # Exit main script block on failure
 
-          # Clona ou atualiza o repositório
-          # (Se o diretório .git já existe, faz pull, senão, clona)
-          if [ -d ".git" ] ; then
-            git pull origin main
-          else
-            mv .env ../
-            # Precisa passar o token ou usar chave SSH para clonar repositório privado
-            # Para repositório público:
-            git clone https://github.com/${{ github.repository }}.git .
-            mv ../.env .
-            # Para repositório privado usando token (menos seguro no script):
-            # git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git .
-            # Melhor: configurar deploy keys SSH no github e na instancia
-          fi
+          # --- Define Core Variables ---
+          export APP_DIR="/home/${{ secrets.EC2_USERNAME }}/app"
+          export EC2_USERNAME="${{ secrets.EC2_USERNAME }}" # Pass username if needed inside scripts
+          export REPO_NAME="${{ github.repository }}"      # Pass repo name for clone command
+          export ENV_FILE="$APP_DIR/.env"
+          export COMPOSE_FILE="$APP_DIR/docker-compose.yml"
+          export TRAEFIK_DATA_DIR="$APP_DIR/traefik-data"
+          export MARKER_FILE="$APP_DIR/active_color.txt"
 
-          # Cria (ou sobrescreve) o arquivo .env com os secrets do GitHub
-          # CUIDADO: Isso coloca secrets em um arquivo no servidor.
-          # Alternativas mais seguras existem (ex: AWS Secrets Manager, variáveis de ambiente diretas no compose).
-          echo "DB_USER=${{ secrets.DB_USER }}" > .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          # Adicione outras variáveis de ambiente necessárias aqui
-          echo "DB_HOST=db" >> .env # Host do DB dentro da rede Docker
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DATABASE_URL=mysql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@db:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}" >> .env
-          echo "NODE_ENV=production" >> .env
-          echo "APP_PORT=${{ secrets.APP_PORT }}" >> .env
-          echo "APP_EMAIL=${{ secrets.APP_EMAIL }}" >> .env
-          echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
-          echo "PIPEDRIVE_WEBHOOK_USER=${{ secrets.PIPEDRIVE_WEBHOOK_USER }}" >> .env
-          echo "PIPEDRIVE_WEBHOOK_PASSWORD=${{ secrets.PIPEDRIVE_WEBHOOK_PASSWORD }}" >> .env
+          # --- Pass Secrets as Environment Variables for the scripts ---
+          # These will be available to the scripts executed below
+          export APP_DOMAIN="${{ secrets.APP_DOMAIN }}"
+          export APP_EMAIL="${{ secrets.APP_EMAIL }}"
+          export APP_PORT="${{ secrets.APP_PORT }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
+          export DB_USER="${{ secrets.DB_USER }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_ROOT_PASSWORD="${{ secrets.DB_ROOT_PASSWORD }}"
+          export TRAEFIK_AUTH_USER_PASS="${{ secrets.TRAEFIK_AUTH_USER_PASS }}"
+          export PIPEDRIVE_WEBHOOK_USER="${{ secrets.PIPEDRIVE_WEBHOOK_USER }}"
+          export PIPEDRIVE_WEBHOOK_PASSWORD="${{ secrets.PIPEDRIVE_WEBHOOK_PASSWORD }}"
 
-          # Garante que o docker compose V2 esteja disponível (ajuste o path se necessário)
-          # docker compose --version
+          # --- Get Path to Scripts ---
+          # Assuming scripts are in .github/scripts/ relative to repo root
+          # The checkout action puts the code in GITHUB_WORKSPACE
+          # Adjust this path if you place scripts elsewhere
+          SCRIPT_DIR="$APP_DIR/.github/scripts"
 
-          # Para garantir que o usuário pode executar docker sem sudo (se configurado no user_data)
-          # Se falhar, pode precisar prefixar com 'sudo' e ajustar permissões/grupos
-          docker compose -f docker-compose.yml --env-file .env down || true # Para containers existentes, ignora erro se não existirem
-          docker compose -f docker-compose.yml --env-file .env pull # Baixa imagens atualizadas (se especificadas no compose, como a do postgres)
-          docker compose -f docker-compose.yml --env-file .env up --build -d # Constrói a imagem da app e sobe os containers em background
+          # --- Execute Deployment Steps ---
+          echo "Executing 01-prepare-env.sh..."
+          bash "$SCRIPT_DIR/01-prepare-env.sh"
 
-          # (Opcional) Limpa imagens Docker antigas e não utilizadas
-          docker image prune -a -f
+          # Load the determined colors from the temp files created by the script
+          # These will be exported and available to subsequent scripts in this session
+          export INACTIVE_COLOR=$(cat /tmp/inactive_color.txt)
+          export ACTIVE_COLOR=$(cat /tmp/active_color.txt)
+          # ACTIVE_PRIORITY and INACTIVE_PRIORITY were also exported within 01-prepare-env.sh
+
+          echo "Executing 02-deploy-inactive.sh..."
+          bash "$SCRIPT_DIR/02-deploy-inactive.sh"
+
+          echo "Executing 03-switch-traffic.sh..."
+          bash "$SCRIPT_DIR/03-switch-traffic.sh"
+
+          echo "Executing 04-cleanup.sh (using previous active color: $ACTIVE_COLOR)..."
+          bash "$SCRIPT_DIR/04-cleanup.sh" # Note: ACTIVE_COLOR here is the one *before* the switch
+
+          echo "--- Deployment Script Execution Completed ---"
+
 
     - name: Verify Deployment
+      if: success() # Only run if the deployment step succeeded
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd ~/app
-          # Check if containers are running
-          if docker compose ps | grep -q "Up"; then
-            echo "✅ Deployment successful - containers are running"
-          else
-            echo "❌ Deployment failed - containers are not running"
-            docker compose logs
-            exit 1
-          fi
+          set -e # Exit verify script block on failure
+
+          # --- Define Core Variables for Verification ---
+          export APP_DIR="/home/${{ secrets.EC2_USERNAME }}/app"
+          export MARKER_FILE="$APP_DIR/active_color.txt"
+          export ENV_FILE="$APP_DIR/.env"
+          export COMPOSE_FILE="$APP_DIR/docker-compose.yml"
+          export APP_DOMAIN="${{ secrets.APP_DOMAIN }}"
+
+          # --- Get Path to Scripts ---
+          SCRIPT_DIR="$APP_DIR/.github/scripts"
+
+          # --- Execute Verification Script ---
+          echo "Executing verify-deployment.sh..."
+          bash "$SCRIPT_DIR/verify-deployment.sh"
+
+          echo "--- Verification Script Execution Completed ---"
