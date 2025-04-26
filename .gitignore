@@ -63,6 +63,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .infra/*.tfvars # Se usar arquivos de variáveis
 *.pem # Chaves privadas SSH
 .infra/*.lock*
+.infra/terraform.tfstate
 
 # Mysql Database
 .db-data/
