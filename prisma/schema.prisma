@@ -4,11 +4,111 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
-model Deal {
-  id    Int    @id
-  title String
+model Person {
+  pipedriveAddTime DateTime? @map("add_time")
+
+  firstName String? @map("first_name")
+  id        Int     @id @map("pipedrive_id")
+  labelIds  String? @map("label_ids")
+  lastName  String? @map("last_name")
+  name      String?
+  orgId     Int?    @map("org_id")
+  ownerId   Int?    @map("owner_id")
+
+  pipedriveUpdateTime DateTime? @map("update_time")
+  visibleTo           String?   @map("visible_to")
+
+  birthday                   DateTime? @map("birthday")
+  postal_address             String?   @map("postal_address") // use .formatted_address
+  is_returning               String?   @map("is_returning")
+  origem                     String?   @map("origem")
+  notes                      String?   @map("notes") @db.Text
+  // im                         String?   @map("im") // DISABLED
+  link_guru                  String?   @map("link_guru")
+  id_huggy                   String?   @map("id_huggy")
+  agente_familia_responsavel Json?     @map("agente_familia_responsavel")
+  transcricao_de_casamento   String?   @map("transcricao_de_casamento")
+  motivo_de_entrada_na_loja  Json?     @map("motivo_de_entrada_na_loja")
+  numero_de_assento          String?   @map("numero_de_assento")
+  infos_alinhamento          String?   @map("infos_alinhamento") @db.Text
+  job_title                  String?   @map("job_title")
+
+  emails PersonEmail[]
+  phones PersonPhone[]
+
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  organization   Organization? @relation("OrganizationPersons", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  organizationId Int?
+
+  @@index([ownerId])
+  @@index([orgId])
+  @@map("persons")
+}
+
+model Organization {
+  pipedriveAddTime    DateTime? @map("add_time")
+  id                  Int       @id @map("id")
+  labelIds            String?   @map("label_ids")
+  name                String?
+  ownerId             Int?      @map("owner_id")
+  pipedriveUpdateTime DateTime? @map("update_time")
+  visibleTo           String?   @map("visible_to")
+
+  // pictureId             Int? @map("picture_id") // DISABLE
+  // address               String? @map("address") // DISABLED
+
+  pt_status               String?   @map("pt_status")
+  pt_tipo_de_processo     String?   @map("pt_tipo_de_processo")
+  pt_requerente           String?   @map("pt_requerente")
+  pt_local_de_envio       String?   @map("pt_local_de_envio")
+  pt_dia_do_envio         DateTime? @map("pt_dia_do_envio")
+  pt_senha                String?   @map("pt_senha")
+  pt_data_da_trava        DateTime? @map("pt_data_da_trava")
+  pt_link_sobre_trava     String?   @map("pt_link_sobre_trava")
+  it_dashboard_do_cliente String?   @map("it_dashboard_do_cliente")
+  pt_status_portugues     String?   @map("pt_status_portugues")
+  pt_acesso_a_central     String?   @map("pt_acesso_a_central")
+  pt_atr_em_andamento     String?   @map("pt_atr_em_andamento")
+  pt_tag_sensibilidade    String?   @map("pt_tag_sensibilidade")
+
+  persons Person[] @relation("OrganizationPersons")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("organizations")
+}
+
+model PersonEmail {
+  id       Int     @id @default(autoincrement())
+  label    String?
+  value    String
+  primary  Boolean @default(false)
+  personId Int     @map("person_pipedrive_id")
+  person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, value])
+  @@index([personId])
+  @@index([value])
+  @@map("person_emails")
+}
+
+model PersonPhone {
+  id       Int     @id @default(autoincrement())
+  label    String?
+  value    String
+  primary  Boolean @default(false)
+  personId Int     @map("person_pipedrive_id")
+  person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, value])
+  @@index([personId])
+  @@index([value])
+  @@map("person_phones")
 }
