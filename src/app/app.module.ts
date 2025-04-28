@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { validateEnv } from '../config/validate-env';
-import { PrismaModule } from '../prisma/prisma.module'; // Import PrismaModule
+import { validateEnv } from '@src/config/validate-env';
+import { PrismaModule } from '@src/prisma/prisma.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { WebhooksModule } from 'src/webhooks/webhooks.module';
-import { WebhooksController } from 'src/webhooks/webhooks.controller';
+import { WebhooksModule } from '@src/webhooks/webhooks.module';
+import { OrganizationModule } from '@src/organization/organization.module';
+import { PersonModule } from '@src/person/person.module';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { APP_PIPE } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -15,8 +18,10 @@ import { WebhooksController } from 'src/webhooks/webhooks.controller';
     }),
     PrismaModule,
     WebhooksModule,
+    OrganizationModule,
+    PersonModule,
   ],
-  controllers: [AppController, WebhooksController],
-  providers: [AppService],
+  controllers: [AppController],
+  providers: [AppService, { provide: APP_PIPE, useClass: ZodValidationPipe }],
 })
 export class AppModule {}

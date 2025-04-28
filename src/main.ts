@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { Logger } from '@nestjs/common';
+import 'tsconfig-paths/register';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

@@ -6,7 +6,7 @@ export function validateEnv() {
   if (!result.success) {
     console.error(
       '❌ Invalid environment variables:',
-      JSON.stringify(result.error.format(), null, 2), // Pretty print Zod errors
+      JSON.stringify(result.error.format(), null, 2),
     );
     process.exit(1);
   }
