@@ -82,6 +82,12 @@ jobs:
           export PIPEDRIVE_WEBHOOK_USER="${{ secrets.PIPEDRIVE_WEBHOOK_USER }}"
           export PIPEDRIVE_WEBHOOK_PASSWORD="${{ secrets.PIPEDRIVE_WEBHOOK_PASSWORD }}"
 
+          # --- Run Prisma Migrate Deploy ---
+          echo "--- Running Prisma Migration ---"
+          echo "--- TODO: Run Prisma Migration ---"
+          # cd "$APP_DIR" # Ensure we're in the app directory
+          # npx prisma migrate deploy -y
+
           # --- Execute Deployment Steps Using Scripts ---
           echo "Executing 01-prepare-env.sh..."
           bash "$SCRIPT_DIR/01-prepare-env.sh"
