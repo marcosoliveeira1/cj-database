@@ -2,7 +2,7 @@
 CREATE TABLE `persons` (
     `add_time` DATETIME(3) NULL,
     `first_name` VARCHAR(191) NULL,
-    `pipedrive_id` INTEGER NOT NULL,
+    `id` INTEGER NOT NULL,
     `label_ids` VARCHAR(191) NULL,
     `last_name` VARCHAR(191) NULL,
     `name` VARCHAR(191) NULL,
@@ -29,7 +29,7 @@ CREATE TABLE `persons` (
 
     INDEX `persons_owner_id_idx`(`owner_id`),
     INDEX `persons_org_id_idx`(`org_id`),
-    PRIMARY KEY (`pipedrive_id`)
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -66,11 +66,11 @@ CREATE TABLE `person_emails` (
     `label` VARCHAR(191) NULL,
     `value` VARCHAR(191) NOT NULL,
     `primary` BOOLEAN NOT NULL DEFAULT false,
-    `person_pipedrive_id` INTEGER NOT NULL,
+    `person_id` INTEGER NOT NULL,
 
-    INDEX `person_emails_person_pipedrive_id_idx`(`person_pipedrive_id`),
+    INDEX `person_emails_person_id_idx`(`person_id`),
     INDEX `person_emails_value_idx`(`value`),
-    UNIQUE INDEX `person_emails_person_pipedrive_id_value_key`(`person_pipedrive_id`, `value`),
+    UNIQUE INDEX `person_emails_person_id_value_key`(`person_id`, `value`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -80,10 +80,10 @@ CREATE TABLE `person_phones` (
     `label` VARCHAR(191) NULL,
     `value` VARCHAR(191) NOT NULL,
     `primary` BOOLEAN NOT NULL DEFAULT false,
-    `person_pipedrive_id` INTEGER NOT NULL,
+    `person_id` INTEGER NOT NULL,
 
-    INDEX `person_phones_person_pipedrive_id_idx`(`person_pipedrive_id`),
+    INDEX `person_phones_person_id_idx`(`person_id`),
     INDEX `person_phones_value_idx`(`value`),
-    UNIQUE INDEX `person_phones_person_pipedrive_id_value_key`(`person_pipedrive_id`, `value`),
+    UNIQUE INDEX `person_phones_person_id_value_key`(`person_id`, `value`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -13,7 +13,7 @@ model Person {
   pipedriveAddTime DateTime? @map("add_time")
 
   firstName String? @map("first_name")
-  id        Int     @id @map("pipedrive_id")
+  id        Int     @id @map("id")
   labelIds  String? @map("label_ids")
   lastName  String? @map("last_name")
   name      String?
@@ -90,7 +90,7 @@ model PersonEmail {
   label    String?
   value    String
   primary  Boolean @default(false)
-  personId Int     @map("person_pipedrive_id")
+  personId Int     @map("person_id")
   person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@unique([personId, value])
@@ -104,7 +104,7 @@ model PersonPhone {
   label    String?
   value    String
   primary  Boolean @default(false)
-  personId Int     @map("person_pipedrive_id")
+  personId Int     @map("person_id")
   person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@unique([personId, value])
