@@ -53,10 +53,11 @@ export class OrganizationMapper
     return {
       id: data.id,
       name: data.name,
-      ownerId: data.owner_id as number,
+      ownerId: data.owner_id,
       visibleTo: data.visible_to,
       labelIds: data.label_ids?.join(','),
-      pipedriveAddTime: data.add_time,
+      pipedriveAddTime: parseDate(data.add_time),
+      pipedriveUpdateTime: parseDate(data.update_time),
       ...customFields,
     };
   }
@@ -66,9 +67,11 @@ export class OrganizationMapper
 
     return {
       name: data.name,
-      ownerId: data.owner_id as number,
+      ownerId: data.owner_id,
       visibleTo: data.visible_to,
       labelIds: data.label_ids?.join(','),
+      pipedriveAddTime: parseDate(data.add_time),
+      pipedriveUpdateTime: parseDate(data.update_time),
       ...customFields,
     };
   }
