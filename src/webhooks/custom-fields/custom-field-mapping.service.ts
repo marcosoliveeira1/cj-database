@@ -30,7 +30,7 @@ export class CustomFieldMappingService implements OnModuleInit {
         type: 'varchar',
       },
       notes: { prismaField: 'notes', type: 'text' },
-      im: { prismaField: 'im', type: 'varchar' },
+      // im: { prismaField: 'im', type: 'varchar' },
       '1b22f3bbf94ee509da6a53dab6edf1996981a91b': {
         prismaField: 'link_guru',
         type: 'varchar',

@@ -60,6 +60,8 @@ export class PersonMapper
                 ? (value as Record<string, unknown>).formatted_address ||
                   JSON.stringify(value)
                 : value;
+          } else if (type === 'varchar') {
+            preparedValue = (value as Record<string, unknown>)?.value || value;
           }
         }
         mappedFields[prismaField] = preparedValue;
