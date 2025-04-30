@@ -7,6 +7,8 @@ import { OrganizationUpsertStrategy } from './processing/strategies/organization
 import { CustomFieldMappingModule } from './custom-fields/custom-field-mapping.module';
 import { PersonModule } from '@src/person/person.module';
 import { OrganizationModule } from '@src/organization/organization.module';
+import { DealModule } from '@src/deal/deal.module';
+import { DealUpsertStrategy } from './processing/strategies/deal-upsert.strategy';
 
 @Module({
   imports: [
@@ -14,12 +16,14 @@ import { OrganizationModule } from '@src/organization/organization.module';
     CustomFieldMappingModule,
     PersonModule,
     OrganizationModule,
+    DealModule,
   ],
   controllers: [WebhooksController],
   providers: [
     WebhookProcessingService,
     PersonUpsertStrategy,
     OrganizationUpsertStrategy,
+    DealUpsertStrategy,
   ],
 })
 export class WebhooksModule {}

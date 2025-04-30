@@ -9,6 +9,7 @@ import {
 } from './strategies/base-upsert.strategy';
 import { logError } from '@src/common/utils/logger.utils';
 import { PersonUpsertStrategy } from './strategies/person-upsert.strategy';
+import { DealUpsertStrategy } from './strategies/deal-upsert.strategy';
 
 @Injectable()
 export class WebhookProcessingService {
@@ -21,10 +22,12 @@ export class WebhookProcessingService {
   constructor(
     private readonly orgStrategy: OrganizationUpsertStrategy,
     private readonly personStrategy: PersonUpsertStrategy,
+    private readonly dealStrategy: DealUpsertStrategy,
   ) {
     this.strategyMap = {
       [PipedriveEntity.ORGANIZATION]: this.orgStrategy,
       [PipedriveEntity.PERSON]: this.personStrategy,
+      [PipedriveEntity.DEAL]: this.dealStrategy,
     };
   }
 

@@ -1,7 +1,7 @@
 export enum PipedriveEntity {
   PERSON = 'person',
   ORGANIZATION = 'organization',
-  // DEAL = 'deal',
+  DEAL = 'deal',
 }
 
 export enum PipedriveAction {

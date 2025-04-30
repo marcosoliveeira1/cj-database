@@ -37,7 +37,7 @@ export class BaseUpsertStrategy<
       CreateInput,
       UpdateInput
     >,
-    protected readonly entityType: 'person' | 'organization',
+    protected readonly entityType: 'person' | 'organization' | 'deal',
   ) {
     this.logger = new Logger(this.constructor.name);
   }
