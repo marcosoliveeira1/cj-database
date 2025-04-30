@@ -43,7 +43,6 @@ model Deal {
   weightedValueCurrency String?   @map("weighted_value_currency")
   origin                String?   @map("origin")
   originId              String?   @map("origin_id")
-  channel               String?   @map("channel")
   channelId             String?   @map("channel_id")
   isArchived            Boolean?  @map("is_archived")
   archiveTime           DateTime? @map("archive_time")

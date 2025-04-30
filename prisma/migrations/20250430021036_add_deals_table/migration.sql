@@ -32,7 +32,6 @@ CREATE TABLE `deals` (
     `weighted_value_currency` VARCHAR(191) NULL,
     `origin` VARCHAR(191) NULL,
     `origin_id` VARCHAR(191) NULL,
-    `channel` VARCHAR(191) NULL,
     `channel_id` VARCHAR(191) NULL,
     `is_archived` BOOLEAN NULL,
     `archive_time` DATETIME(3) NULL,
