@@ -9,6 +9,135 @@ datasource db {
   relationMode = "prisma"
 }
 
+model Deal {
+  // --- Standard Pipedrive Fields (Mapped) ---
+  id                    Int       @id @map("id")
+  title                 String?   @map("title")
+  creatorUserId         Int?      @map("creator_user_id")
+  ownerId               Int?      @map("owner_id")
+  pipelineId            Int?      @map("pipeline")
+  stageId               Int?      @map("stage_id")
+  status                String?   @map("status")
+  pipedriveAddTime      DateTime? @map("add_time")
+  pipedriveUpdateTime   DateTime? @map("update_time")
+  stageChangeTime       DateTime? @map("stage_change_time")
+  nextActivityDate      DateTime? @map("next_activity_date")
+  lastActivityDate      DateTime? @map("last_activity_date")
+  wonTime               DateTime? @map("won_time")
+  lostTime              DateTime? @map("lost_time")
+  closeTime             DateTime? @map("close_time")
+  lostReason            String?   @map("lost_reason")
+  visibleTo             String?   @map("visible_to")
+  activitiesCount       Int?      @map("activities_count")
+  doneActivitiesCount   Int?      @map("done_activities_count")
+  undoneActivitiesCount Int?      @map("undone_activities_count")
+  emailMessagesCount    Int?      @map("email_messages_count")
+  value                 Decimal?  @map("value") @db.Decimal(12, 2)
+  currency              String?   @map("currency")
+  orgId                 Int?      @map("org_id")
+  personId              Int?      @map("person_id")
+  expectedCloseDate     DateTime? @map("expected_close_date")
+  probability           Int?      @map("probability")
+  labelIds              String?   @map("label")
+  weightedValue         Decimal?  @map("weighted_value") @db.Decimal(12, 2)
+  weightedValueCurrency String?   @map("weighted_value_currency")
+  origin                String?   @map("origin")
+  originId              String?   @map("origin_id")
+  channel               String?   @map("channel")
+  channelId             String?   @map("channel_id")
+  isArchived            Boolean?  @map("is_archived")
+  archiveTime           DateTime? @map("archive_time")
+
+  // --- Custom Fields (Mapped using Pipedrive Hashes) ---
+  tipos_de_processos                String?   @map("tipos_de_processos")
+  link_proposta                     String?   @map("link_proposta")
+  link_pre_busca_it                 String?   @map("link_pre_busca_it")
+  resultado_pre_busca               String?   @map("resultado_pre_busca")
+  link_pre_busca_br                 String?   @map("link_pre_busca_br")
+  link_guru                         String?   @map("link_guru")
+  type_parente_portugues            String?   @map("type_parente_portugues")
+  type_docs_portugues               String?   @map("type_docs_portugues")
+  type_outros_familiares            String?   @map("type_outros_familiares")
+  type_visitou_portugal             String?   @map("type_visitou_portugal")
+  type_objetivo                     String?   @map("type_objetivo")
+  loja_sdr                          String?   @map("loja_sdr")
+  loja_inside                       String?   @map("loja_inside")
+  sdr_passagem_sdr                  String?   @map("sdr_passagem_sdr")
+  sdr_data_passagem                 DateTime? @map("sdr_data_passagem")
+  sdr_quem_passou_id                Int?      @map("sdr_quem_passou_id")
+  sdr_original_id                   Int?      @map("sdr_original_id")
+  tipo_de_venda                     String?   @map("tipo_de_venda")
+  data_retorno                      DateTime? @map("data_retorno")
+  valor_total_processo_automacao    String?   @map("valor_total_processo_automacao")
+  forma_pagamento_automacao         String?   @map("forma_pagamento_automacao") @db.Text
+  processos_fechados_automacao      String?   @map("processos_fechados_automacao") @db.Text
+  infos_pt_automacao                String?   @map("infos_pt_automacao") @db.Text
+  tipo_certidao_pt_automacao        String?   @map("tipo_certidao_pt_automacao")
+  versao_precificacao_automacao     String?   @map("versao_precificacao_automacao")
+  indicacao                         String?   @map("indicacao")
+  certidao_portugues                String?   @map("certidao_portugues")
+  cf_nome                           String?   @map("cf_nome")
+  cf_telefone                       String?   @map("cf_telefone")
+  numero_assento                    String?   @map("numero_assento")
+  numero_processo_portugal          String?   @map("numero_processo_portugal")
+  sao_menores_idade                 String?   @map("sao_menores_idade")
+  nome_completo_portugues           String?   @map("nome_completo_portugues")
+  nome_completo_mae_portugues       String?   @map("nome_completo_mae_portugues")
+  nome_completo_pai_portugues       String?   @map("nome_completo_pai_portugues")
+  concelho_nascimento_portuga       String?   @map("concelho_nascimento_portuga")
+  numero_rastreamento               String?   @map("numero_rastreamento")
+  valor_certidao                    String?   @map("valor_certidao")
+  nome_completo_contratante         String?   @map("nome_completo_contratante")
+  cpf_contratante                   String?   @map("cpf_contratante")
+  rg_contratante                    String?   @map("rg_contratante")
+  orgao_emissor_rg_contratante      String?   @map("orgao_emissor_rg_contratante")
+  data_emissao_rg_contratante       String?   @map("data_emissao_rg_contratante")
+  cep_contratante                   String?   @map("cep_contratante")
+  endereco_contratante              String?   @map("endereco_contratante")
+  assento_ascendente_portuga        String?   @map("assento_ascendente_portuga")
+  possui_plano_familia              String?   @map("possui_plano_familia")
+  codigo_produto                    String?   @map("codigo_produto") @db.Text
+  docs_emission                     String?   @map("docs_emission")
+  processos_fechados_mika_automacao String?   @map("processos_fechados_mika_automacao") @db.Text
+  docs_anexados_produto             String?   @map("docs_anexados_produto") @db.Text
+  parente_italiano                  String?   @map("parente_italiano")
+  local_nascimento_italiano         String?   @map("local_nascimento_italiano")
+  compromisso_inicial               String?   @map("compromisso_inicial")
+  vendedor_original                 String?   @map("vendedor_original")
+  docs_italiano                     String?   @map("docs_italiano")
+  data_recebido                     DateTime? @map("data_recebido")
+  historico_proprietario            String?   @map("historico_proprietario") @db.Text
+  status_negocio_andamento          String?   @map("status_negocio_andamento")
+  sdr_passagem_resposta             String?   @map("sdr_passagem_resposta")
+  it_chatbot                        String?   @map("it_chatbot")
+  it_teste_chatbot                  String?   @map("it_teste_chatbot")
+  gclid                             String?   @map("gclid") @db.Text
+  sdr_intermediario_id              Int?      @map("sdr_intermediario_id")
+  it_chatbot_modelo_msg_inicial     String?   @map("it_chatbot_modelo_msg_inicial")
+  status_reuniao_chatbot            String?   @map("status_reuniao_chatbot")
+  criador_shopping_id               Int?      @map("criador_shopping_id")
+  resultado_roleta                  String?   @map("resultado_roleta")
+  resultado_roleta_manual           String?   @map("resultado_roleta_manual")
+  data_alocacao                     DateTime? @map("data_alocacao")
+
+  // --- Internal Timestamps ---
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // --- Relations ---
+  organization Organization? @relation("OrganizationDeals", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  person       Person?       @relation("PersonDeals", fields: [personId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // --- Indices ---
+  @@index([ownerId])
+  @@index([orgId])
+  @@index([personId])
+  @@index([status])
+  @@index([stageId])
+  @@index([pipelineId])
+  @@map("deals") // Maps to the 'deals' table in the database
+}
+
 model Person {
   pipedriveAddTime DateTime? @map("add_time")
 
@@ -44,6 +173,7 @@ model Person {
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
   organization   Organization? @relation("OrganizationPersons", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  deals          Deal[]        @relation("PersonDeals")
   organizationId Int?
 
   @@index([ownerId])
@@ -78,6 +208,7 @@ model Organization {
   pt_tag_sensibilidade    String?   @map("pt_tag_sensibilidade")
 
   persons Person[] @relation("OrganizationPersons")
+  deals   Deal[]   @relation("OrganizationDeals")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
