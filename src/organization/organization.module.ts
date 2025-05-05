@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OrganizationMapper } from './organization.mapper';
-import { PrismaOrganizationRepository } from './repositories/organization.repository';
+import { PrismaOrganizationRepository } from './repositories/prisma-organization.repository';
 import { IOrganizationRepository } from './interfaces/organization-repository.interface';
 
 @Module({

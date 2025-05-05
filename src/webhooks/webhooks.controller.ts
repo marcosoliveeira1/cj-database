@@ -18,20 +18,20 @@ import { logError } from '@src/common/utils/logger.utils';
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
-  constructor(private readonly processingService: WebhookProcessingService) {}
+  constructor(private readonly processingService: WebhookProcessingService) { }
 
   @Post('pipedrive')
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
-  async handlePipedriveWebhook(
+  handlePipedriveWebhook(
     @Body() payload: PipedriveWebhookPayloadDto,
-  ): Promise<{ status: string }> {
+  ): { status: string } {
     this.logger.log(
       `Received Pipedrive Webhook for ${payload.meta?.entity} ID ${payload.data?.id ?? 'N/A'}`,
     );
 
-    await this.processingService.processWebhook(payload).catch((error) => {
+    this.processingService.processWebhook(payload).catch((error) => {
       logError(`Error during async webhook processing`, error);
       return;
     });
