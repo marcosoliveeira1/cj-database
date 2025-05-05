@@ -1,54 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prismaClient';
-import { CustomFieldMappingService } from '@src/webhooks/custom-fields/custom-field-mapping.service';
 import {
   parseDate,
   safeParseInt,
 } from '@src/common/mapping/utils/mapping.utils';
 import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
 import { OrganizationInput } from '@src/webhooks/dtos/pipedrive.dto';
+import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-field-mapping.helper';
 
 @Injectable()
 export class OrganizationMapper
   implements
-    IMapper<
-      OrganizationInput,
-      Prisma.OrganizationCreateInput,
-      Prisma.OrganizationUpdateInput
-    >
-{
+  IMapper<
+    OrganizationInput,
+    Prisma.OrganizationCreateInput,
+    Prisma.OrganizationUpdateInput
+  > {
   private readonly logger = new Logger(OrganizationMapper.name);
 
-  constructor(private readonly customFieldMapper: CustomFieldMappingService) {}
+  constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper
+  ) { }
 
-  private mapCustomFields(
-    customFieldsData: Record<string, any> | null | undefined,
-  ): Record<string, any> {
-    const mappedFields: Record<string, any> = {};
-    if (!customFieldsData) return mappedFields;
-
-    const mapping = this.customFieldMapper.getMappingFor('organization');
-
-    for (const [pipedriveKey, value] of Object.entries(customFieldsData)) {
-      const mapInfo = mapping[pipedriveKey];
-      if (mapInfo) {
-        const { prismaField, type } = mapInfo;
-        let preparedValue: unknown = value;
-        if (value !== null && value !== undefined) {
-          if (type === 'date' || type === 'datetime' || type === 'time') {
-            preparedValue = parseDate(value as string);
-          } else if (type === 'int') {
-            preparedValue = safeParseInt(value);
-          }
-        }
-        mappedFields[prismaField] = preparedValue;
-      }
-    }
-    return mappedFields;
+  private mapCustomFields(data: OrganizationInput): Partial<Prisma.OrganizationCreateInput> {
+    return this.customFieldMapperHelper.mapCustomFieldsToInput('organization', data.custom_fields);
   }
 
   toCreateInput(data: OrganizationInput): Prisma.OrganizationCreateInput {
-    const customFields = this.mapCustomFields(data.custom_fields);
+    const customFields = this.mapCustomFields(data);
 
     return {
       id: data.id,
@@ -63,7 +41,7 @@ export class OrganizationMapper
   }
 
   toUpdateInput(data: OrganizationInput): Prisma.OrganizationUpdateInput {
-    const customFields = this.mapCustomFields(data.custom_fields);
+    const customFields = this.mapCustomFields(data);
 
     return {
       name: data.name,
