@@ -25,6 +25,7 @@ export class CustomFieldMapperHelper {
         // @ts-ignore
         mappedFields[prismaField as keyof T] = preparedValue;
       } else {
+        if(pipedriveKey === "im") continue;
         this.logger.debug(`No mapping found for ${entityType} custom field hash: ${pipedriveKey}`);
       }
     }

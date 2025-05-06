@@ -6,36 +6,65 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  UsePipes,
+
 } from '@nestjs/common';
 import { BasicAuthGuard } from '@src/auth/guards/basic-auth.guard';
-import { WebhookProcessingService } from './processing/webhook-processing.service';
 import { PipedriveWebhookPayloadDto } from './dtos/pipedrive-webhook.zod';
-import { ValidationPipe } from '@nestjs/common';
 import { logError } from '@src/common/utils/logger.utils';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from './webhook.constants';
+import { PipedriveEntity } from './dtos/pipedrive.enum';
+import { extractWebhookMetadata } from './utils/webhook-payload.utils';
 
 @Controller('webhooks')
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
-  constructor(private readonly processingService: WebhookProcessingService) { }
+  constructor(
+    @InjectQueue(WEBHOOK_QUEUE_TOKEN) private readonly webhookQueue: Queue<PipedriveWebhookPayloadDto, any, WebhookJobName>,
+  ) { }
+
+  private getJobNameForPayload(payload: PipedriveWebhookPayloadDto): WebhookJobName {
+    const entityType = payload.meta?.entity as PipedriveEntity;
+
+    const jobNameMap = {
+      [PipedriveEntity.PERSON]: WebhookJobName.PROCESS_PERSON_WEBHOOK,
+      [PipedriveEntity.ORGANIZATION]: WebhookJobName.PROCESS_ORGANIZATION_WEBHOOK,
+      [PipedriveEntity.DEAL]: WebhookJobName.PROCESS_DEAL_WEBHOOK,
+    }
+
+    return jobNameMap[entityType] || WebhookJobName.PROCESS_UNKNOWN_WEBHOOK;
+  }
 
   @Post('pipedrive')
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ transform: true }))
-  handlePipedriveWebhook(
+  async handlePipedriveWebhook(
     @Body() payload: PipedriveWebhookPayloadDto,
-  ): { status: string } {
+  ): Promise<{ status: string; jobId: string | undefined; jobName: WebhookJobName }> {
+    const { entity, action, pipedriveId, rawEntity } = extractWebhookMetadata(payload);
+
+    const jobId = `pipedrive-${entity}-${pipedriveId}-${Date.now()}`;
+    const jobName = this.getJobNameForPayload(payload);
+
     this.logger.log(
-      `Received Pipedrive Webhook for ${payload.meta?.entity} ID ${payload.data?.id ?? 'N/A'}`,
+      `Received Pipedrive Webhook for ${rawEntity || entity} ${action} (Pipedrive ID: ${pipedriveId}). Adding job with Name: '${jobName}' and ID: '${jobId}' to BullMQ queue '${this.webhookQueue.name}'.`,
     );
 
-    this.processingService.processWebhook(payload).catch((error) => {
-      logError(`Error during async webhook processing`, error);
-      return;
-    });
+    try {
+      const job = await this.webhookQueue.add(jobName, payload, { jobId });
 
-    return { status: 'received' };
+      this.logger.log(`Job added successfully: Name='${job.name}', ID='${job.id}' for Pipedrive ${rawEntity || entity} ID ${pipedriveId}.`);
+
+      return { status: 'queued', jobId: job.id, jobName: job.name as WebhookJobName };
+
+    } catch (error) {
+      logError(
+        `Error adding webhook job (Pipedrive ID: ${pipedriveId}, Job Name: ${jobName}) to BullMQ queue '${this.webhookQueue.name}'`,
+        error,
+      );
+      throw error;
+    }
   }
 }

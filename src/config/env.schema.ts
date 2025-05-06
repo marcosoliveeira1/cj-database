@@ -9,6 +9,8 @@ export const envSchema = z.object({
   CACHE_TTL_SECONDS: z.coerce.number().default(3600),
   PIPEDRIVE_WEBHOOK_USER: z.string().min(1),
   PIPEDRIVE_WEBHOOK_PASSWORD: z.string().min(1),
+
+  REDIS_URL: z.string().url(),
 });
 
 export type EnvSchema = z.infer<typeof envSchema>;
