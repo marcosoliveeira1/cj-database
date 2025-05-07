@@ -65,8 +65,7 @@ services:
     environment:
       - APP_COLOR=blue # Identify the instance color
       - APP_PORT=${APP_PORT?Variable APP_PORT is not set in .env} # Ensure APP_PORT is defined
-      # NODE_ENV is usually set in .env, but can be overridden here if needed
-      # - NODE_ENV=production
+      - NODE_ENV=production
     labels:
       # Enable Traefik for this service
       - "traefik.enable=true"
@@ -93,7 +92,7 @@ services:
     environment:
       - APP_COLOR=green # Identify the instance color
       - APP_PORT=${APP_PORT?Variable APP_PORT is not set in .env} # Ensure APP_PORT is defined
-      # - NODE_ENV=production
+      - NODE_ENV=production
     labels:
       # Enable Traefik for this service
       - "traefik.enable=true"
@@ -107,6 +106,7 @@ services:
       - "traefik.http.services.app_green_svc.loadbalancer.server.port=${APP_PORT}"
     depends_on:
       - db
+      - redis
     networks:
       - traefik
 
@@ -130,6 +130,15 @@ services:
       - '${DB_HOST_PORT:-3306}:3306' # Example: Map host port 3306 to container port 3306
     networks:
       - traefik # Allow app containers to reach the db via hostname 'db'
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    networks:
+      - traefik
 
 # Named volume for persisting database data
 volumes:
