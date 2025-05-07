@@ -178,6 +178,8 @@ model Person {
   @@index([ownerId])
   @@index([orgId])
   @@map("persons")
+
+  sync_status         String?   @default("synced")
 }
 
 model Organization {
@@ -213,6 +215,8 @@ model Organization {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("organizations")
+
+  sync_status         String?   @default("synced")
 }
 
 model PersonEmail {
