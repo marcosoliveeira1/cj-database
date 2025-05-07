@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prismaClient';
-import { PipedriveData } from '@src/webhooks/processing/strategies/base-upsert.strategy';
 import {
   parseDate,
 } from '@src/common/mapping/utils/mapping.utils';
@@ -15,7 +14,7 @@ import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-fiel
 @Injectable()
 export class PersonMapper
   implements
-  IMapper<PipedriveData, Prisma.PersonCreateInput, Prisma.PersonUpdateInput> {
+  IMapper<PersonInput, Prisma.PersonCreateInput, Prisma.PersonUpdateInput> {
   private readonly logger = new Logger(PersonMapper.name);
 
   constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper

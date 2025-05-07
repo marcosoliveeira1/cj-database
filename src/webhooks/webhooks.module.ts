@@ -10,10 +10,11 @@ import { OrganizationModule } from '@src/organization/organization.module';
 import { DealModule } from '@src/deal/deal.module';
 import { DealUpsertStrategy } from './processing/strategies/deal-upsert.strategy';
 import { BullModule } from '@nestjs/bullmq';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EnvSchema } from '@src/config/env.schema';
+import { ConfigModule } from '@nestjs/config';
 import { WebhookProcessor } from './processing/webhook.processor';
-import { WEBHOOK_QUEUE_TOKEN } from './webhook.constants';
+import { WEBHOOK_QUEUE_TOKEN } from '@src/common/utils/queues.types';
+import { SynchronizationModule } from '@src/synchronization/synchronization.module';
+import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
 
 @Module({
   imports: [
@@ -23,39 +24,12 @@ import { WEBHOOK_QUEUE_TOKEN } from './webhook.constants';
     OrganizationModule,
     DealModule,
     ConfigModule,
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService<EnvSchema>) => {
-        const redisUrlString = configService.get('REDIS_URL', { infer: true });
-        if (!redisUrlString) {
-          throw new Error('REDIS_URL não está definido nas variáveis de ambiente.');
-        }
-        const redisUrl = new URL(redisUrlString);
-        return {
-          connection: {
-            host: redisUrl.hostname,
-            port: parseInt(redisUrl.port, 10),
-          },
-        };
-      },
-      inject: [ConfigService],
-    }),
+    SynchronizationModule,
     BullModule.registerQueueAsync({
       name: WEBHOOK_QUEUE_TOKEN,
-      imports: [ConfigModule],
       useFactory: async () => ({
-        name: WEBHOOK_QUEUE_TOKEN,
-        defaultJobOptions: {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 1000,
-          },
-          removeOnComplete: true,
-          removeOnFail: false,
-        },
+        defaultJobOptions: DEFAULT_JOB_OPTIONS,
       }),
-      inject: [],
     }),
   ],
   controllers: [WebhooksController],
@@ -67,5 +41,4 @@ import { WEBHOOK_QUEUE_TOKEN } from './webhook.constants';
     WebhookProcessor,
   ],
 })
-
 export class WebhooksModule { }

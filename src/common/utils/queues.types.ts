@@ -13,3 +13,18 @@ export const enum WebhookJobName {
     PROCESS_DEAL_WEBHOOK = 'process-deal-webhook',
     PROCESS_UNKNOWN_WEBHOOK = 'process-unknown-webhook',
 }
+
+
+export type ManagedEntityType = 'organization' | 'person';
+
+export const ENTITY_SYNC_QUEUE_TOKEN = 'entity-sync-queue';
+
+export enum EntitySyncJobName {
+    SYNC_ORGANIZATION = 'sync-organization',
+    SYNC_PERSON = 'sync-person',
+}
+
+export type EntitySyncJobPayload = {
+    entityType: ManagedEntityType;
+    entityId: number;
+};

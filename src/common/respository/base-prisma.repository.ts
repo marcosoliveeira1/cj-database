@@ -3,13 +3,19 @@ import { Prisma, PrismaClient } from '@prismaClient';
 import { logError } from '@src/common/utils/logger.utils';
 import { IRepository } from './interfaces/repository.interface';
 
-
-export abstract class BasePrismaRepository<T, W, C, U, D>
-  implements IRepository<T, W, C, U> {
+export abstract class BasePrismaRepository<
+  T extends { id: number },
+  W extends { id?: number },
+  C,
+  U,
+  D extends {
+    upsert: (args: { where: W; create: C; update: U; select?: any; include?: any }) => Promise<T>;
+    findUnique: (args: { where: W; select?: any; include?: any }) => Promise<T | null>;
+    create: (args: { data: C; select?: any; include?: any }) => Promise<T>;
+  }
+> implements IRepository<T, W, C, U> {
   protected readonly logger: Logger;
-  protected abstract delegate: D & {
-    upsert: (args: { where: W; create: C; update: U }) => Promise<T>;
-  };
+  protected abstract delegate: D;
   protected abstract entityName: string;
 
   constructor(protected readonly prisma: PrismaClient) {
@@ -17,7 +23,7 @@ export abstract class BasePrismaRepository<T, W, C, U, D>
   }
 
   async upsert(where: W, create: C, update: U): Promise<T | null> {
-    const id = (where as WhereInput)?.id ?? 'unknown';
+    const id = where?.id ?? 'unknown';
     try {
       const result = await this.delegate.upsert({
         where,
@@ -45,8 +51,42 @@ export abstract class BasePrismaRepository<T, W, C, U, D>
       return null;
     }
   }
-}
 
-type WhereInput = {
-  id: number;
-};
+  async findById(id: number): Promise<T | null> {
+    try {
+
+      const result = await this.delegate.findUnique({
+        where: { id } as W,
+      });
+      return result;
+    } catch (error) {
+      logError(`Error in ${this.entityName} findById for ID ${id}`, error);
+      return null;
+    }
+  }
+
+  async createPlaceholder({ id }: { id: number }): Promise<T | null> {
+    try {
+
+      const placeholderData = {
+        id,
+        sync_status: 'placeholder',
+      } as C;
+
+      const result = await this.delegate.create({
+        data: placeholderData,
+      });
+      
+      this.logger.log(`Created placeholder for ${this.entityName} with ID: ${id}`);
+      return result;
+    } catch (error) {
+      logError(`Error in ${this.entityName} createPlaceholder for ID ${id}`, error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+
+        this.logger.warn(`Placeholder for ${this.entityName} ID ${id} likely already exists due to P2002 error. Attempting to fetch.`);
+        return this.findById(id);
+      }
+      return null;
+    }
+  }
+}

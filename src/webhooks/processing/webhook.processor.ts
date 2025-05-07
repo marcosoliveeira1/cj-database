@@ -3,7 +3,7 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { WebhookProcessingService } from './webhook-processing.service';
 import { PipedriveWebhookPayloadDto } from '../dtos/pipedrive-webhook.zod';
-import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from '../webhook.constants';
+import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from '@src/common/utils/queues.types';
 import { logError } from '@src/common/utils/logger.utils';
 import { extractWebhookMetadata } from '../utils/webhook-payload.utils';
 

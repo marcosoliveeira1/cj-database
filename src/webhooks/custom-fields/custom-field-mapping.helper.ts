@@ -22,8 +22,8 @@ export class CustomFieldMapperHelper {
       if (mapInfo) {
         const { prismaField, type } = mapInfo;
         const preparedValue = this.prepareValueBasedOnType(value, type, prismaField);
-        // @ts-ignore
-        mappedFields[prismaField as keyof T] = preparedValue;
+
+        (mappedFields as Record<string, any>)[prismaField] = preparedValue;
       } else {
         if(pipedriveKey === "im") continue;
         this.logger.debug(`No mapping found for ${entityType} custom field hash: ${pipedriveKey}`);

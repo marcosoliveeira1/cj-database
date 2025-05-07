@@ -13,7 +13,7 @@ import { PipedriveWebhookPayloadDto } from './dtos/pipedrive-webhook.zod';
 import { logError } from '@src/common/utils/logger.utils';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from './webhook.constants';
+import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from '@src/common/utils/queues.types';
 import { PipedriveEntity } from './dtos/pipedrive.enum';
 import { extractWebhookMetadata } from './utils/webhook-payload.utils';
 
