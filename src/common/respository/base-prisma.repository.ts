@@ -7,7 +7,7 @@ export abstract class BasePrismaRepository<
   T extends { id: number },
   W extends { id?: number },
   C,
-  U,
+  U extends object,
   D extends {
     upsert: (args: { where: W; create: C; update: U; select?: any; include?: any }) => Promise<T>;
     findUnique: (args: { where: W; select?: any; include?: any }) => Promise<T | null>;
@@ -25,11 +25,16 @@ export abstract class BasePrismaRepository<
   async upsert(where: W, create: C, update: U): Promise<T | null> {
     const id = where?.id ?? 'unknown';
     try {
+      const updateWithSyncStatus = 'sync_status' in update
+        ? { ...update, sync_status: 'synced' }
+        : update;
+
       const result = await this.delegate.upsert({
         where,
         create,
-        update,
+        update: updateWithSyncStatus,
       });
+
       this.logger.log(`Upserted ${this.entityName} with ID: ${id}`);
       return result;
     } catch (error) {
@@ -76,7 +81,7 @@ export abstract class BasePrismaRepository<
       const result = await this.delegate.create({
         data: placeholderData,
       });
-      
+
       this.logger.log(`Created placeholder for ${this.entityName} with ID: ${id}`);
       return result;
     } catch (error) {
