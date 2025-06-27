@@ -21,10 +21,12 @@ import { SynchronizationModule } from '@src/synchronization/synchronization.modu
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService<EnvSchema>) => {
+      useFactory: (configService: ConfigService<EnvSchema>) => {
         const redisUrlString = configService.get('REDIS_URL', { infer: true });
         if (!redisUrlString) {
-          throw new Error('REDIS_URL não está definido nas variáveis de ambiente.');
+          throw new Error(
+            'REDIS_URL não está definido nas variáveis de ambiente.',
+          );
         }
         const redisUrl = new URL(redisUrlString);
         return {
@@ -45,4 +47,4 @@ import { SynchronizationModule } from '@src/synchronization/synchronization.modu
   controllers: [AppController],
   providers: [AppService, { provide: APP_PIPE, useClass: ZodValidationPipe }],
 })
-export class AppModule { }
+export class AppModule {}

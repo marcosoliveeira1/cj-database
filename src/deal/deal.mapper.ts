@@ -6,13 +6,18 @@ import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-fiel
 
 @Injectable()
 export class DealMapper
-  implements IMapper<DealInput, Prisma.DealCreateInput, Prisma.DealUpdateInput> {
+  implements IMapper<DealInput, Prisma.DealCreateInput, Prisma.DealUpdateInput>
+{
   private readonly logger = new Logger(DealMapper.name);
 
-  constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper
-  ) { }
+  constructor(
+    private readonly customFieldMapperHelper: CustomFieldMapperHelper,
+  ) {}
   private mapCustomFields(data: DealInput): Partial<Prisma.DealCreateInput> {
-    return this.customFieldMapperHelper.mapCustomFieldsToInput('deal', data.custom_fields);
+    return this.customFieldMapperHelper.mapCustomFieldsToInput(
+      'deal',
+      data.custom_fields,
+    );
   }
 
   toCreateInput(data: DealInput): Prisma.DealCreateInput {

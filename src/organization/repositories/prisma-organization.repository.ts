@@ -13,7 +13,8 @@ export class PrismaOrganizationRepository
     Prisma.OrganizationUpdateInput,
     Prisma.OrganizationDelegate
   >
-  implements IOrganizationRepository {
+  implements IOrganizationRepository
+{
   protected delegate = this.prisma.organization;
   protected entityName = 'Organization';
 

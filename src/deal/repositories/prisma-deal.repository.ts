@@ -13,7 +13,8 @@ export class PrismaDealRepository
     Prisma.DealUpdateInput,
     Prisma.DealDelegate
   >
-  implements IDealRepository {
+  implements IDealRepository
+{
   protected delegate = this.prisma.deal;
   protected entityName = 'Deal';
 

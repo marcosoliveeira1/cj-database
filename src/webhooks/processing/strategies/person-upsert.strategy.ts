@@ -25,16 +25,24 @@ export class PersonUpsertStrategy extends BaseUpsertStrategy<
   async upsert(data: PersonInput): Promise<PrismaModelResult | null> {
     const pipedriveId = data.id;
     if (!pipedriveId) {
-      this.logger.error(`Cannot upsert ${this.entityType}: Missing Pipedrive ID.`);
+      this.logger.error(
+        `Cannot upsert ${this.entityType}: Missing Pipedrive ID.`,
+      );
       return null;
     }
 
     try {
       if ('org_id' in data) {
-        await this.relatedEntityEnsureService.ensureExists('organization', data.org_id);
+        await this.relatedEntityEnsureService.ensureExists(
+          'organization',
+          data.org_id,
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to ensure related organization for Person ID ${pipedriveId}: ${error}`, error.stack);
+      this.logger.error(
+        `Failed to ensure related organization for Person ID ${pipedriveId}: ${error}`,
+        (error as Error).stack,
+      );
       throw error;
     }
 

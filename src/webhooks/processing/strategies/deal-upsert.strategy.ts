@@ -25,15 +25,26 @@ export class DealUpsertStrategy extends BaseUpsertStrategy<
   async upsert(data: DealInput): Promise<PrismaModelResult | null> {
     const pipedriveId = data.id;
     if (!pipedriveId) {
-      this.logger.error(`Cannot upsert ${this.entityType}: Missing Pipedrive ID.`);
+      this.logger.error(
+        `Cannot upsert ${this.entityType}: Missing Pipedrive ID.`,
+      );
       return null;
     }
 
     try {
-      await this.relatedEntityEnsureService.ensureExists('organization', data.org_id);
-      await this.relatedEntityEnsureService.ensureExists('person', data.person_id);
+      await this.relatedEntityEnsureService.ensureExists(
+        'organization',
+        data.org_id,
+      );
+      await this.relatedEntityEnsureService.ensureExists(
+        'person',
+        data.person_id,
+      );
     } catch (error) {
-      this.logger.error(`Failed to ensure related entities for Deal ID ${pipedriveId}: ${error}`, error.stack);
+      this.logger.error(
+        `Failed to ensure related entities for Deal ID ${pipedriveId}: ${error}`,
+        (error as Error).stack,
+      );
       throw error;
     }
 

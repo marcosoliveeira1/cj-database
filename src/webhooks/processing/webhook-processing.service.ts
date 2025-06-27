@@ -15,7 +15,9 @@ import { extractWebhookMetadata } from '../utils/webhook-payload.utils';
 @Injectable()
 export class WebhookProcessingService {
   private readonly logger = new Logger(WebhookProcessingService.name);
-  private readonly strategyMap: Partial<Record<PipedriveEntity, IUpsertStrategy>>;
+  private readonly strategyMap: Partial<
+    Record<PipedriveEntity, IUpsertStrategy>
+  >;
 
   constructor(
     private readonly orgStrategy: OrganizationUpsertStrategy,
@@ -32,8 +34,8 @@ export class WebhookProcessingService {
   async processWebhook(
     payload: PipedriveWebhookPayloadDto,
   ): Promise<PrismaModelResult | null> {
-    const { entity, action, pipedriveId, rawEntity } = extractWebhookMetadata(payload);
-
+    const { entity, action, pipedriveId, rawEntity } =
+      extractWebhookMetadata(payload);
 
     this.logger.debug(
       `Processing Service: Executing logic for: ${action} ${rawEntity || entity} (Pipedrive ID: ${pipedriveId})`,
@@ -43,11 +45,12 @@ export class WebhookProcessingService {
       this.logger.warn(
         `Invalid meta for processing (Pipedrive ID: ${pipedriveId}). Entity: '${rawEntity || entity}', Action: '${action}'. Skipping. Meta: ${JSON.stringify(payload.meta)}`,
       );
-      throw new Error(`Invalid meta data (entity or action unknown) for Pipedrive ID: ${pipedriveId}`);
+      throw new Error(
+        `Invalid meta data (entity or action unknown) for Pipedrive ID: ${pipedriveId}`,
+      );
     }
 
     const data = payload.data as PipedriveData | undefined;
-
 
     if (!data) {
       this.logger.warn(
@@ -56,7 +59,10 @@ export class WebhookProcessingService {
       return null;
     }
 
-    if (action !== PipedriveAction.CREATE && action !== PipedriveAction.CHANGE) {
+    if (
+      action !== PipedriveAction.CREATE &&
+      action !== PipedriveAction.CHANGE
+    ) {
       this.logger.warn(
         `Processing for ${action} ${entity} (Pipedrive ID: ${pipedriveId}) - Only CREATE and CHANGE actions are supported. Skipping.`,
       );
@@ -69,11 +75,13 @@ export class WebhookProcessingService {
       this.logger.warn(
         `No upsert strategy found for entity type: '${entity}' (Pipedrive ID: ${pipedriveId}). Skipping.`,
       );
-      throw new Error(`No strategy for ${entity} (Pipedrive ID: ${pipedriveId})`);
+      throw new Error(
+        `No strategy for ${entity} (Pipedrive ID: ${pipedriveId})`,
+      );
     }
 
     try {
-      const result = await strategy.upsert(data as PipedriveData);
+      const result = await strategy.upsert(data);
 
       if (!result) {
         this.logger.warn(

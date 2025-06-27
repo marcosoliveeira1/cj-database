@@ -9,22 +9,18 @@ import { ConfigModule } from '@nestjs/config';
 import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
 
 @Module({
-    imports: [
-        OrganizationModule,
-        PersonModule,
-        ConfigModule,
-        BullModule.registerQueueAsync({
-            name: ENTITY_SYNC_QUEUE_TOKEN,
-            useFactory: async () => ({
-
-                defaultJobOptions: DEFAULT_JOB_OPTIONS,
-            }),
-        }),
-    ],
-    providers: [
-        RelatedEntityEnsureService,
-        EntitySyncProcessor,
-    ],
-    exports: [RelatedEntityEnsureService],
+  imports: [
+    OrganizationModule,
+    PersonModule,
+    ConfigModule,
+    BullModule.registerQueueAsync({
+      name: ENTITY_SYNC_QUEUE_TOKEN,
+      useFactory: () => ({
+        defaultJobOptions: DEFAULT_JOB_OPTIONS,
+      }),
+    }),
+  ],
+  providers: [RelatedEntityEnsureService, EntitySyncProcessor],
+  exports: [RelatedEntityEnsureService],
 })
-export class SynchronizationModule { }
+export class SynchronizationModule {}

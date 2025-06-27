@@ -1,16 +1,20 @@
-import { Injectable, Logger, } from "@nestjs/common";
-import { CustomFieldMappingService } from "./custom-field-mapping.service";
-import { parseDate, safeParseFloat, safeParseInt } from "@src/common/mapping/utils/mapping.utils";
+import { Injectable, Logger } from '@nestjs/common';
+import { CustomFieldMappingService } from './custom-field-mapping.service';
+import {
+  parseDate,
+  safeParseFloat,
+  safeParseInt,
+} from '@src/common/mapping/utils/mapping.utils';
 
 @Injectable()
 export class CustomFieldMapperHelper {
   private readonly logger = new Logger(CustomFieldMapperHelper.name);
 
-  constructor(private readonly mappingService: CustomFieldMappingService) { }
+  constructor(private readonly mappingService: CustomFieldMappingService) {}
 
   mapCustomFieldsToInput<T extends Record<string, any>>(
     entityType: 'person' | 'organization' | 'deal',
-    customFieldsData: Record<string, any> | null | undefined
+    customFieldsData: Record<string, any> | null | undefined,
   ): Partial<T> {
     const mappedFields: Partial<T> = {};
     if (!customFieldsData) return mappedFields;
@@ -21,18 +25,24 @@ export class CustomFieldMapperHelper {
       const mapInfo = mapping[pipedriveKey];
       if (mapInfo) {
         const { prismaField, type } = mapInfo;
-        const preparedValue = this.prepareValueBasedOnType(value, type, prismaField);
+        const preparedValue = this.prepareValueBasedOnType(
+          value,
+          type,
+          prismaField,
+        );
 
         (mappedFields as Record<string, any>)[prismaField] = preparedValue;
       } else {
-        if(pipedriveKey === "im") continue;
-        this.logger.debug(`No mapping found for ${entityType} custom field hash: ${pipedriveKey}`);
+        if (pipedriveKey === 'im') continue;
+        this.logger.debug(
+          `No mapping found for ${entityType} custom field hash: ${pipedriveKey}`,
+        );
       }
     }
     return mappedFields;
   }
 
-  private prepareValueBasedOnType(value: any, type: string, fieldName: string): unknown {
+  private prepareValueBasedOnType(value: any, type: string): unknown {
     if (value === null || value === undefined) return null;
 
     switch (type) {
@@ -54,12 +64,15 @@ export class CustomFieldMapperHelper {
         if (typeof value === 'object' && value !== null && 'id' in value) {
           return String((value as { id: number | string }).id);
         } else if (Array.isArray(value)) {
-          return value.map(item => String(item?.id ?? item)).join(',');
+          return value
+            .map((item: { id: number | string }) => String(item?.id ?? item))
+            .join(',');
         }
         return String(value);
       case 'address':
         return typeof value === 'object' && value !== null
-          ? (value as any).formatted_address || JSON.stringify(value)
+          ? (value as { formatted_address: string }).formatted_address ||
+              JSON.stringify(value)
           : String(value);
       case 'text':
       case 'varchar':

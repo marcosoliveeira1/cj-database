@@ -13,7 +13,8 @@ export class PrismaPersonRepository
     Prisma.PersonUpdateInput,
     Prisma.PersonDelegate
   >
-  implements IPersonRepository {
+  implements IPersonRepository
+{
   protected delegate = this.prisma.person;
   protected entityName = 'Person';
 

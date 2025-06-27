@@ -27,7 +27,7 @@ import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
     SynchronizationModule,
     BullModule.registerQueueAsync({
       name: WEBHOOK_QUEUE_TOKEN,
-      useFactory: async () => ({
+      useFactory: () => ({
         defaultJobOptions: DEFAULT_JOB_OPTIONS,
       }),
     }),
@@ -41,4 +41,4 @@ import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
     WebhookProcessor,
   ],
 })
-export class WebhooksModule { }
+export class WebhooksModule {}

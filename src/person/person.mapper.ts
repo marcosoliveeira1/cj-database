@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prismaClient';
-import {
-  parseDate,
-} from '@src/common/mapping/utils/mapping.utils';
+import { parseDate } from '@src/common/mapping/utils/mapping.utils';
 import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
 import {
   EmailInput,
@@ -14,13 +12,20 @@ import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-fiel
 @Injectable()
 export class PersonMapper
   implements
-  IMapper<PersonInput, Prisma.PersonCreateInput, Prisma.PersonUpdateInput> {
+    IMapper<PersonInput, Prisma.PersonCreateInput, Prisma.PersonUpdateInput>
+{
   private readonly logger = new Logger(PersonMapper.name);
 
-  constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper
-  ) { }
-  private mapCustomFields(data: PersonInput): Partial<Prisma.PersonCreateInput> {
-    return this.customFieldMapperHelper.mapCustomFieldsToInput('person', data.custom_fields);
+  constructor(
+    private readonly customFieldMapperHelper: CustomFieldMapperHelper,
+  ) {}
+  private mapCustomFields(
+    data: PersonInput,
+  ): Partial<Prisma.PersonCreateInput> {
+    return this.customFieldMapperHelper.mapCustomFieldsToInput(
+      'person',
+      data.custom_fields,
+    );
   }
   private prepareEmailInput(
     emails: EmailInput[] | null,

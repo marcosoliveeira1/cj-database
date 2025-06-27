@@ -9,11 +9,22 @@ export abstract class BasePrismaRepository<
   C,
   U extends object,
   D extends {
-    upsert: (args: { where: W; create: C; update: U; select?: any; include?: any }) => Promise<T>;
-    findUnique: (args: { where: W; select?: any; include?: any }) => Promise<T | null>;
+    upsert: (args: {
+      where: W;
+      create: C;
+      update: U;
+      select?: any;
+      include?: any;
+    }) => Promise<T>;
+    findUnique: (args: {
+      where: W;
+      select?: any;
+      include?: any;
+    }) => Promise<T | null>;
     create: (args: { data: C; select?: any; include?: any }) => Promise<T>;
-  }
-> implements IRepository<T, W, C, U> {
+  },
+> implements IRepository<T, W, C, U>
+{
   protected readonly logger: Logger;
   protected abstract delegate: D;
   protected abstract entityName: string;
@@ -25,9 +36,8 @@ export abstract class BasePrismaRepository<
   async upsert(where: W, create: C, update: U): Promise<T | null> {
     const id = where?.id ?? 'unknown';
     try {
-      const updateWithSyncStatus = 'sync_status' in update
-        ? { ...update, sync_status: 'synced' }
-        : update;
+      const updateWithSyncStatus =
+        'sync_status' in update ? { ...update, sync_status: 'synced' } : update;
 
       const result = await this.delegate.upsert({
         where,
@@ -59,7 +69,6 @@ export abstract class BasePrismaRepository<
 
   async findById(id: number): Promise<T | null> {
     try {
-
       const result = await this.delegate.findUnique({
         where: { id } as W,
       });
@@ -72,7 +81,6 @@ export abstract class BasePrismaRepository<
 
   async createPlaceholder({ id }: { id: number }): Promise<T | null> {
     try {
-
       const placeholderData = {
         id,
         sync_status: 'placeholder',
@@ -82,13 +90,22 @@ export abstract class BasePrismaRepository<
         data: placeholderData,
       });
 
-      this.logger.log(`Created placeholder for ${this.entityName} with ID: ${id}`);
+      this.logger.log(
+        `Created placeholder for ${this.entityName} with ID: ${id}`,
+      );
       return result;
     } catch (error) {
-      logError(`Error in ${this.entityName} createPlaceholder for ID ${id}`, error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-
-        this.logger.warn(`Placeholder for ${this.entityName} ID ${id} likely already exists due to P2002 error. Attempting to fetch.`);
+      logError(
+        `Error in ${this.entityName} createPlaceholder for ID ${id}`,
+        error,
+      );
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        this.logger.warn(
+          `Placeholder for ${this.entityName} ID ${id} likely already exists due to P2002 error. Attempting to fetch.`,
+        );
         return this.findById(id);
       }
       return null;
