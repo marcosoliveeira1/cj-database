@@ -156,7 +156,7 @@ model Person {
   birthday                   DateTime? @map("birthday")
   postal_address             String?   @map("postal_address") // use .formatted_address
   is_returning               String?   @map("is_returning")
-  origem                     String?   @map("origem")
+  origem                     String?   @map("origem") @db.VarChar(255)
   notes                      String?   @map("notes") @db.Text
   // im                         String?   @map("im") // DISABLED
   link_guru                  String?   @map("link_guru")
