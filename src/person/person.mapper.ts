@@ -98,6 +98,7 @@ export class PersonMapper
       emails: { deleteMany: {}, ...this.prepareEmailInput(data.emails) },
       phones: { deleteMany: {}, ...this.preparePhoneInput(data.phones) },
       organization: orgUpdate,
+      sync_status: 'synced',
     };
   }
 }

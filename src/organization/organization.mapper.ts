@@ -59,6 +59,7 @@ export class OrganizationMapper
       pipedriveAddTime: parseDate(data.add_time),
       pipedriveUpdateTime: parseDate(data.update_time),
       ...customFields,
+      sync_status: 'synced',
     };
   }
 }
