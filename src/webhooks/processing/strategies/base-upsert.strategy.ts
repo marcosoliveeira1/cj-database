@@ -2,11 +2,12 @@ import { Logger, Injectable } from '@nestjs/common';
 import { logError } from '@src/common/utils/logger.utils';
 import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
 import { IRepository } from '@src/common/respository/interfaces/repository.interface';
-import { Person, Organization } from '@prismaClient';
+import { Person, Organization, Deal } from '@prismaClient';
 
 export type PrismaModelResult =
   | (Person & { entityType: 'person' })
-  | (Organization & { entityType: 'organization' });
+  | (Organization & { entityType: 'organization' })
+  | (Deal & { entityType: 'deal' });
 
 export type PipedriveData = {
   id: number;
@@ -55,8 +56,8 @@ export class BaseUpsertStrategy<
     );
 
     try {
-      const createInput = this.mapper.toCreateInput(data);
-      const updateInput = this.mapper.toUpdateInput(data);
+      const createInput = await this.mapper.toCreateInput(data);
+      const updateInput = await this.mapper.toUpdateInput(data);
 
       const whereInput = { id: pipedriveId } as WhereInput;
 

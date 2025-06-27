@@ -19,12 +19,13 @@ export class PersonMapper
   constructor(
     private readonly customFieldMapperHelper: CustomFieldMapperHelper,
   ) {}
-  private mapCustomFields(
+
+  private async mapCustomFields(
     data: PersonInput,
-  ): Partial<Prisma.PersonCreateInput> {
-    return this.customFieldMapperHelper.mapCustomFieldsToInput(
+  ): Promise<Partial<Prisma.PersonCreateInput>> {
+    return await this.customFieldMapperHelper.mapCustomFieldsToInput(
       'person',
-      data.custom_fields,
+      data,
     );
   }
   private prepareEmailInput(
@@ -53,8 +54,8 @@ export class PersonMapper
     return { create: phonesToCreate };
   }
 
-  toCreateInput(data: PersonInput): Prisma.PersonCreateInput {
-    const customFields = this.mapCustomFields(data);
+  async toCreateInput(data: PersonInput): Promise<Prisma.PersonCreateInput> {
+    const customFields = await this.mapCustomFields(data);
 
     return {
       id: data.id,
@@ -72,8 +73,8 @@ export class PersonMapper
     };
   }
 
-  toUpdateInput(data: PersonInput): Prisma.PersonUpdateInput {
-    const customFields = this.mapCustomFields(data);
+  async toUpdateInput(data: PersonInput): Promise<Prisma.PersonUpdateInput> {
+    const customFields = await this.mapCustomFields(data);
 
     let orgUpdate:
       | Prisma.OrganizationUpdateOneWithoutPersonsNestedInput

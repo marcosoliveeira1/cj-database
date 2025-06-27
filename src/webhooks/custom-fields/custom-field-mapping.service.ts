@@ -19,8 +19,8 @@ export class CustomFieldMappingService implements OnModuleInit {
 
   private loadStaticMappings() {
     this.personFieldMapping = {
-      birthday: { prismaField: 'birthday', type: 'date' },
-      postal_address: { prismaField: 'postal_address', type: 'address' },
+      // birthday: { prismaField: 'birthday', type: 'date' },
+      // postal_address: { prismaField: 'postal_address', type: 'address' },
       '11899fe33f11eeb1c0910c955a75fab00a5eb536': {
         prismaField: 'is_returning',
         type: 'varchar',
@@ -60,61 +60,17 @@ export class CustomFieldMappingService implements OnModuleInit {
         type: 'text',
       },
       job_title: { prismaField: 'job_title', type: 'varchar' },
-    };
-
-    this.orgFieldMapping = {
-      address: { prismaField: 'address', type: 'address' },
-      '24a7dc93f166a0b32d0f9d8a8c97b75ab316b7a5': {
-        prismaField: 'pt_status',
+      '875b67715607c1b4fdc9fc3da303b6e1f5ef3b4b': {
+        prismaField: 'campo_indicacao',
         type: 'varchar',
       },
-      b564701815de30dc3b1bd175dfa3fd1953bbe834: {
-        prismaField: 'pt_tipo_de_processo',
+      '2bdb625695c1c9cf384fe617bcb762dd6bed8430': {
+        prismaField: 'id_buzzlead',
         type: 'varchar',
       },
-      '9aeb273879deff7c320c463a0f89a0830fa2d91d': {
-        prismaField: 'pt_requerente',
+      '6b3ea8ec21a63d37e4100637c7caa8652d3d49ba': {
+        prismaField: 'form_de_atualizacao_embaixador',
         type: 'varchar',
-      },
-      ceeab9fbabcdb8482500cc527a1a10dbddf1349d: {
-        prismaField: 'pt_local_de_envio',
-        type: 'varchar',
-      },
-      '87eece434f1a3ef06004d89c024d5024d990c0a4': {
-        prismaField: 'pt_dia_do_envio',
-        type: 'date',
-      },
-      d7f10d5bfb0dfe07b7c6265d3a5f2cc30b946331: {
-        prismaField: 'pt_senha',
-        type: 'varchar',
-      },
-      be9a4c24235319010196b9daf5fc916ddb0eef7f: {
-        prismaField: 'pt_data_da_trava',
-        type: 'date',
-      },
-      '0c95a278d80dc679b057d24d1fba48c647c40f80': {
-        prismaField: 'pt_link_sobre_trava',
-        type: 'varchar',
-      },
-      '99905914a61afc3555bbdaf5d2272ad4a7a5500a': {
-        prismaField: 'it_dashboard_do_cliente',
-        type: 'varchar',
-      },
-      '6d255f2790a135c810d5604082776f836fa4d843': {
-        prismaField: 'pt_status_portugues',
-        type: 'enum',
-      },
-      dc598be29ce761ea8336a6836b559a89daabbd7c: {
-        prismaField: 'pt_acesso_a_central',
-        type: 'enum',
-      },
-      dad832746facd158da83a1b7f6ab486610873f4f: {
-        prismaField: 'pt_atr_em_andamento',
-        type: 'varchar',
-      },
-      '102422eb33fd58a5da39d89a17c009c0cb51024d': {
-        prismaField: 'pt_tag_sensibilidade',
-        type: 'enum',
       },
     };
 
@@ -400,6 +356,70 @@ export class CustomFieldMappingService implements OnModuleInit {
         prismaField: 'data_alocacao',
         type: 'date',
       }, // Data Alocação
+      fccc74ecd1c247f0ecd738e01095fe0176ea17d5: {
+        prismaField: 'inside_data_pego',
+        type: 'date',
+      }, // [Inside] Data pego
+      aba12510e37d9539a75df01e4b848ab774f538ed: {
+        prismaField: 'rmkt_renan',
+        type: 'varchar',
+      },
+    };
+
+    this.orgFieldMapping = {
+      // Custom Organization Fields
+      '24a7dc93f166a0b32d0f9d8a8c97b75ab316b7a5': {
+        prismaField: 'pt_status',
+        type: 'varchar',
+      }, // [PT] Status
+      b564701815de30dc3b1bd175dfa3fd1953bbe834: {
+        prismaField: 'pt_tipo_de_processo',
+        type: 'varchar',
+      }, // [PT] Tipo de processo
+      '9aeb273879deff7c320c463a0f89a0830fa2d91d': {
+        prismaField: 'pt_requerente',
+        type: 'varchar',
+      }, // [PT] Requerente
+      ceeab9fbabcdb8482500cc527a1a10dbddf1349d: {
+        prismaField: 'pt_local_de_envio',
+        type: 'varchar',
+      }, // [PT] Local de envio
+      '87eece434f1a3ef06004d89c024d5024d990c0a4': {
+        prismaField: 'pt_dia_do_envio',
+        type: 'date',
+      }, // [PT] Dia do envio
+      d7f10d5bfb0dfe07b7c6265d3a5f2cc30b946331: {
+        prismaField: 'pt_senha',
+        type: 'varchar',
+      }, // [PT] Senha
+      be9a4c24235319010196b9daf5fc916ddb0eef7f: {
+        prismaField: 'pt_data_da_trava',
+        type: 'date',
+      }, // [PT] Data da trava
+      '0c95a278d80dc679b057d24d1fba48c647c40f80': {
+        prismaField: 'pt_link_sobre_trava',
+        type: 'varchar',
+      }, // [PT] Link sobre trava
+      '99905914a61afc3555bbdaf5d2272ad4a7a5500a': {
+        prismaField: 'it_dashboard_do_cliente',
+        type: 'varchar',
+      }, // [IT] Dashboard do cliente
+      '6d255f2790a135c810d5604082776f836fa4d843': {
+        prismaField: 'pt_status_portugues',
+        type: 'enum',
+      }, // [PT] Status Português
+      dc598be29ce761ea8336a6836b559a89daabbd7c: {
+        prismaField: 'pt_acesso_a_central',
+        type: 'enum',
+      }, // [PT] Acesso a central?
+      dad832746facd158da83a1b7f6ab486610873f4f: {
+        prismaField: 'pt_atr_em_andamento',
+        type: 'varchar',
+      }, // [PT] ATR em andamento
+      '102422eb33fd58a5da39d89a17c009c0cb51024d': {
+        prismaField: 'pt_tag_sensibilidade',
+        type: 'enum',
+      }, // [PT] TAG Sensibilidade
     };
   }
 

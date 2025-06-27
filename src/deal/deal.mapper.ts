@@ -13,18 +13,20 @@ export class DealMapper
   constructor(
     private readonly customFieldMapperHelper: CustomFieldMapperHelper,
   ) {}
-  private mapCustomFields(data: DealInput): Partial<Prisma.DealCreateInput> {
-    return this.customFieldMapperHelper.mapCustomFieldsToInput(
+  private async mapCustomFields(
+    data: DealInput,
+  ): Promise<Partial<Prisma.DealCreateInput>> {
+    return await this.customFieldMapperHelper.mapCustomFieldsToInput(
       'deal',
-      data.custom_fields,
+      data,
     );
   }
 
-  toCreateInput(data: DealInput): Prisma.DealCreateInput {
-    const mappedFields = this.mapCustomFields(data);
+  async toCreateInput(data: DealInput): Promise<Prisma.DealCreateInput> {
+    const mappedFields = await this.mapCustomFields(data);
 
     const createInput: Prisma.DealCreateInput = {
-      id: data.id,
+      ...this.baseInput(data),
       ...mappedFields,
       organization: data.org_id ? { connect: { id: data.org_id } } : undefined,
       person: data.person_id ? { connect: { id: data.person_id } } : undefined,
@@ -33,8 +35,8 @@ export class DealMapper
     return createInput;
   }
 
-  toUpdateInput(data: DealInput): Prisma.DealUpdateInput {
-    const mappedFields = this.mapCustomFields(data);
+  async toUpdateInput(data: DealInput): Promise<Prisma.DealUpdateInput> {
+    const mappedFields = await this.mapCustomFields(data);
 
     let orgUpdate:
       | Prisma.OrganizationUpdateOneWithoutDealsNestedInput
@@ -55,11 +57,50 @@ export class DealMapper
     }
 
     const updateInput: Prisma.DealUpdateInput = {
+      ...this.baseInput(data),
       ...mappedFields,
       organization: orgUpdate,
       person: personUpdate,
     };
 
     return updateInput;
+  }
+
+  private baseInput(data: DealInput) {
+    return {
+      id: data.id,
+      title: data.title,
+      status: data.status,
+      creatorUserId: data.creator_user_id,
+      pipedriveAddTime: data.add_time,
+      pipedriveUpdateTime: data.update_time,
+      ownerId: data.owner_id,
+      pipelineId: data.pipeline_id,
+      stageId: data.stage_id,
+      stageChangeTime: data.stage_change_time,
+      nextActivityDate: data.next_activity_date,
+      lastActivityDate: data.last_activity_date,
+      wonTime: data.won_time,
+      lostTime: data.lost_time,
+      closeTime: data.close_time,
+      lostReason: data.lost_reason,
+      visibleTo: data.visible_to,
+      activitiesCount: data.activities_count,
+      doneActivitiesCount: data.done_activities_count,
+      undoneActivitiesCount: data.undone_activities_count,
+      emailMessagesCount: data.email_messages_count,
+      value: data.value,
+      currency: data.currency,
+      expectedCloseDate: data.expected_close_date,
+      probability: data.probability,
+      labelIds: data.label_ids?.join(','),
+      weightedValue: data.weighted_value,
+      weightedValueCurrency: data.weighted_value_currency,
+      origin: data.origin,
+      originId: data.origin_id,
+      channelId: data.channel_id,
+      isArchived: data.is_archived,
+      archiveTime: data.archive_time,
+    };
   }
 }

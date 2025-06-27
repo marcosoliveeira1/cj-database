@@ -118,6 +118,8 @@ model Deal {
   resultado_roleta                  String?   @map("resultado_roleta")
   resultado_roleta_manual           String?   @map("resultado_roleta_manual")
   data_alocacao                     DateTime? @map("data_alocacao")
+  inside_data_pego                  DateTime? @map("inside_data_pego") // New
+  rmkt_renan                        String?   @map("rmkt_renan") // New
 
   // --- Internal Timestamps ---
   createdAt DateTime @default(now()) @map("created_at")
@@ -165,6 +167,10 @@ model Person {
   numero_de_assento          String?   @map("numero_de_assento")
   infos_alinhamento          String?   @map("infos_alinhamento") @db.Text
   job_title                  String?   @map("job_title")
+
+  campo_indicacao              String?   @map("campo_indicacao") // New
+  id_buzzlead                  String?   @map("id_buzzlead") // New
+  form_de_atualizacao_embaixador String?   @map("form_de_atualizacao_embaixador") // New
 
   emails PersonEmail[]
   phones PersonPhone[]

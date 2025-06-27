@@ -20,17 +20,19 @@ export class OrganizationMapper
     private readonly customFieldMapperHelper: CustomFieldMapperHelper,
   ) {}
 
-  private mapCustomFields(
+  private async mapCustomFields(
     data: OrganizationInput,
-  ): Partial<Prisma.OrganizationCreateInput> {
-    return this.customFieldMapperHelper.mapCustomFieldsToInput(
+  ): Promise<Partial<Prisma.OrganizationCreateInput>> {
+    return await this.customFieldMapperHelper.mapCustomFieldsToInput(
       'organization',
-      data.custom_fields,
+      data,
     );
   }
 
-  toCreateInput(data: OrganizationInput): Prisma.OrganizationCreateInput {
-    const customFields = this.mapCustomFields(data);
+  async toCreateInput(
+    data: OrganizationInput,
+  ): Promise<Prisma.OrganizationCreateInput> {
+    const customFields = await this.mapCustomFields(data);
 
     return {
       id: data.id,
@@ -44,8 +46,10 @@ export class OrganizationMapper
     };
   }
 
-  toUpdateInput(data: OrganizationInput): Prisma.OrganizationUpdateInput {
-    const customFields = this.mapCustomFields(data);
+  async toUpdateInput(
+    data: OrganizationInput,
+  ): Promise<Prisma.OrganizationUpdateInput> {
+    const customFields = await this.mapCustomFields(data);
 
     return {
       name: data.name,

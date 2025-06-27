@@ -12,12 +12,17 @@ import { APP_PIPE } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { EnvSchema } from '@src/config/env.schema';
 import { SynchronizationModule } from '@src/synchronization/synchronization.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { PipedriveApiModule } from '@src/pipedrive-api/pipedrive-api.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,
+    }),
+    CacheModule.register({
+      isGlobal: true,
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -43,6 +48,7 @@ import { SynchronizationModule } from '@src/synchronization/synchronization.modu
     OrganizationModule,
     PersonModule,
     SynchronizationModule,
+    PipedriveApiModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_PIPE, useClass: ZodValidationPipe }],

@@ -1,0 +1,3170 @@
+--- START: Dockerfile ---
+# --- Base Stage ---
+FROM node:22-alpine AS base
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy only package files to install dependencies
+COPY pnpm-lock.yaml package.json ./
+
+# --- Dependencies Stage ---
+FROM base AS deps
+RUN pnpm install --frozen-lockfile
+
+# --- Build Stage ---
+FROM deps AS build
+COPY . .
+COPY prisma ./prisma
+RUN pnpx prisma generate
+RUN pnpm build
+
+# --- Production Stage ---
+FROM node:22-alpine AS prod
+WORKDIR /app
+
+# Enable pnpm and copy necessary files
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY package.json .
+
+EXPOSE ${APP_PORT}
+
+CMD ["node", "dist/main.js"]
+
+--- END: Dockerfile ---
+
+--- START: nest-cli.json ---
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true
+  }
+}
+
+--- END: nest-cli.json ---
+
+--- START: prisma/schema.prisma ---
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma_client"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Deal {
+  // --- Standard Pipedrive Fields (Mapped) ---
+  id                    Int       @id @map("id")
+  title                 String?   @map("title")
+  creatorUserId         Int?      @map("creator_user_id")
+  ownerId               Int?      @map("owner_id")
+  pipelineId            Int?      @map("pipeline")
+  stageId               Int?      @map("stage_id")
+  status                String?   @map("status")
+  pipedriveAddTime      DateTime? @map("add_time")
+  pipedriveUpdateTime   DateTime? @map("update_time")
+  stageChangeTime       DateTime? @map("stage_change_time")
+  nextActivityDate      DateTime? @map("next_activity_date")
+  lastActivityDate      DateTime? @map("last_activity_date")
+  wonTime               DateTime? @map("won_time")
+  lostTime              DateTime? @map("lost_time")
+  closeTime             DateTime? @map("close_time")
+  lostReason            String?   @map("lost_reason")
+  visibleTo             String?   @map("visible_to")
+  activitiesCount       Int?      @map("activities_count")
+  doneActivitiesCount   Int?      @map("done_activities_count")
+  undoneActivitiesCount Int?      @map("undone_activities_count")
+  emailMessagesCount    Int?      @map("email_messages_count")
+  value                 Decimal?  @map("value") @db.Decimal(12, 2)
+  currency              String?   @map("currency")
+  orgId                 Int?      @map("org_id")
+  personId              Int?      @map("person_id")
+  expectedCloseDate     DateTime? @map("expected_close_date")
+  probability           Int?      @map("probability")
+  labelIds              String?   @map("label")
+  weightedValue         Decimal?  @map("weighted_value") @db.Decimal(12, 2)
+  weightedValueCurrency String?   @map("weighted_value_currency")
+  origin                String?   @map("origin")
+  originId              String?   @map("origin_id")
+  channelId             String?   @map("channel_id")
+  isArchived            Boolean?  @map("is_archived")
+  archiveTime           DateTime? @map("archive_time")
+
+  // --- Custom Fields (Mapped using Pipedrive Hashes) ---
+  tipos_de_processos                String?   @map("tipos_de_processos")
+  link_proposta                     String?   @map("link_proposta")
+  link_pre_busca_it                 String?   @map("link_pre_busca_it")
+  resultado_pre_busca               String?   @map("resultado_pre_busca")
+  link_pre_busca_br                 String?   @map("link_pre_busca_br")
+  link_guru                         String?   @map("link_guru")
+  type_parente_portugues            String?   @map("type_parente_portugues")
+  type_docs_portugues               String?   @map("type_docs_portugues")
+  type_outros_familiares            String?   @map("type_outros_familiares")
+  type_visitou_portugal             String?   @map("type_visitou_portugal")
+  type_objetivo                     String?   @map("type_objetivo")
+  loja_sdr                          String?   @map("loja_sdr")
+  loja_inside                       String?   @map("loja_inside")
+  sdr_passagem_sdr                  String?   @map("sdr_passagem_sdr")
+  sdr_data_passagem                 DateTime? @map("sdr_data_passagem")
+  sdr_quem_passou_id                Int?      @map("sdr_quem_passou_id")
+  sdr_original_id                   Int?      @map("sdr_original_id")
+  tipo_de_venda                     String?   @map("tipo_de_venda")
+  data_retorno                      DateTime? @map("data_retorno")
+  valor_total_processo_automacao    String?   @map("valor_total_processo_automacao")
+  forma_pagamento_automacao         String?   @map("forma_pagamento_automacao") @db.Text
+  processos_fechados_automacao      String?   @map("processos_fechados_automacao") @db.Text
+  infos_pt_automacao                String?   @map("infos_pt_automacao") @db.Text
+  tipo_certidao_pt_automacao        String?   @map("tipo_certidao_pt_automacao")
+  versao_precificacao_automacao     String?   @map("versao_precificacao_automacao")
+  indicacao                         String?   @map("indicacao")
+  certidao_portugues                String?   @map("certidao_portugues")
+  cf_nome                           String?   @map("cf_nome")
+  cf_telefone                       String?   @map("cf_telefone")
+  numero_assento                    String?   @map("numero_assento")
+  numero_processo_portugal          String?   @map("numero_processo_portugal")
+  sao_menores_idade                 String?   @map("sao_menores_idade")
+  nome_completo_portugues           String?   @map("nome_completo_portugues")
+  nome_completo_mae_portugues       String?   @map("nome_completo_mae_portugues")
+  nome_completo_pai_portugues       String?   @map("nome_completo_pai_portugues")
+  concelho_nascimento_portuga       String?   @map("concelho_nascimento_portuga")
+  numero_rastreamento               String?   @map("numero_rastreamento")
+  valor_certidao                    String?   @map("valor_certidao")
+  nome_completo_contratante         String?   @map("nome_completo_contratante")
+  cpf_contratante                   String?   @map("cpf_contratante")
+  rg_contratante                    String?   @map("rg_contratante")
+  orgao_emissor_rg_contratante      String?   @map("orgao_emissor_rg_contratante")
+  data_emissao_rg_contratante       String?   @map("data_emissao_rg_contratante")
+  cep_contratante                   String?   @map("cep_contratante")
+  endereco_contratante              String?   @map("endereco_contratante")
+  assento_ascendente_portuga        String?   @map("assento_ascendente_portuga")
+  possui_plano_familia              String?   @map("possui_plano_familia")
+  codigo_produto                    String?   @map("codigo_produto") @db.Text
+  docs_emission                     String?   @map("docs_emission")
+  processos_fechados_mika_automacao String?   @map("processos_fechados_mika_automacao") @db.Text
+  docs_anexados_produto             String?   @map("docs_anexados_produto") @db.Text
+  parente_italiano                  String?   @map("parente_italiano")
+  local_nascimento_italiano         String?   @map("local_nascimento_italiano")
+  compromisso_inicial               String?   @map("compromisso_inicial")
+  vendedor_original                 String?   @map("vendedor_original")
+  docs_italiano                     String?   @map("docs_italiano")
+  data_recebido                     DateTime? @map("data_recebido")
+  historico_proprietario            String?   @map("historico_proprietario") @db.Text
+  status_negocio_andamento          String?   @map("status_negocio_andamento")
+  sdr_passagem_resposta             String?   @map("sdr_passagem_resposta")
+  it_chatbot                        String?   @map("it_chatbot")
+  it_teste_chatbot                  String?   @map("it_teste_chatbot")
+  gclid                             String?   @map("gclid") @db.Text
+  sdr_intermediario_id              Int?      @map("sdr_intermediario_id")
+  it_chatbot_modelo_msg_inicial     String?   @map("it_chatbot_modelo_msg_inicial")
+  status_reuniao_chatbot            String?   @map("status_reuniao_chatbot")
+  criador_shopping_id               Int?      @map("criador_shopping_id")
+  resultado_roleta                  String?   @map("resultado_roleta")
+  resultado_roleta_manual           String?   @map("resultado_roleta_manual")
+  data_alocacao                     DateTime? @map("data_alocacao")
+
+  // --- Internal Timestamps ---
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // --- Relations ---
+  organization Organization? @relation("OrganizationDeals", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  person       Person?       @relation("PersonDeals", fields: [personId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // --- Indices ---
+  @@index([ownerId])
+  @@index([orgId])
+  @@index([personId])
+  @@index([status])
+  @@index([stageId])
+  @@index([pipelineId])
+  @@map("deals") // Maps to the 'deals' table in the database
+}
+
+model Person {
+  pipedriveAddTime DateTime? @map("add_time")
+
+  firstName String? @map("first_name")
+  id        Int     @id @map("id")
+  labelIds  String? @map("label_ids")
+  lastName  String? @map("last_name")
+  name      String?
+  orgId     Int?    @map("org_id")
+  ownerId   Int?    @map("owner_id")
+
+  pipedriveUpdateTime DateTime? @map("update_time")
+  visibleTo           String?   @map("visible_to")
+
+  birthday                   DateTime? @map("birthday")
+  postal_address             String?   @map("postal_address") // use .formatted_address
+  is_returning               String?   @map("is_returning")
+  origem                     String?   @map("origem")
+  notes                      String?   @map("notes") @db.Text
+  // im                         String?   @map("im") // DISABLED
+  link_guru                  String?   @map("link_guru")
+  id_huggy                   String?   @map("id_huggy")
+  agente_familia_responsavel Json?     @map("agente_familia_responsavel")
+  transcricao_de_casamento   String?   @map("transcricao_de_casamento")
+  motivo_de_entrada_na_loja  Json?     @map("motivo_de_entrada_na_loja")
+  numero_de_assento          String?   @map("numero_de_assento")
+  infos_alinhamento          String?   @map("infos_alinhamento") @db.Text
+  job_title                  String?   @map("job_title")
+
+  emails PersonEmail[]
+  phones PersonPhone[]
+
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  organization   Organization? @relation("OrganizationPersons", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  deals          Deal[]        @relation("PersonDeals")
+  organizationId Int?
+
+  @@index([ownerId])
+  @@index([orgId])
+  @@map("persons")
+
+  sync_status         String?   @default("synced")
+}
+
+model Organization {
+  pipedriveAddTime    DateTime? @map("add_time")
+  id                  Int       @id @map("id")
+  labelIds            String?   @map("label_ids")
+  name                String?
+  ownerId             Int?      @map("owner_id")
+  pipedriveUpdateTime DateTime? @map("update_time")
+  visibleTo           String?   @map("visible_to")
+
+  // pictureId             Int? @map("picture_id") // DISABLE
+  // address               String? @map("address") // DISABLED
+
+  pt_status               String?   @map("pt_status")
+  pt_tipo_de_processo     String?   @map("pt_tipo_de_processo")
+  pt_requerente           String?   @map("pt_requerente")
+  pt_local_de_envio       String?   @map("pt_local_de_envio")
+  pt_dia_do_envio         DateTime? @map("pt_dia_do_envio")
+  pt_senha                String?   @map("pt_senha")
+  pt_data_da_trava        DateTime? @map("pt_data_da_trava")
+  pt_link_sobre_trava     String?   @map("pt_link_sobre_trava")
+  it_dashboard_do_cliente String?   @map("it_dashboard_do_cliente")
+  pt_status_portugues     String?   @map("pt_status_portugues")
+  pt_acesso_a_central     String?   @map("pt_acesso_a_central")
+  pt_atr_em_andamento     String?   @map("pt_atr_em_andamento")
+  pt_tag_sensibilidade    String?   @map("pt_tag_sensibilidade")
+
+  persons Person[] @relation("OrganizationPersons")
+  deals   Deal[]   @relation("OrganizationDeals")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("organizations")
+
+  sync_status         String?   @default("synced")
+}
+
+model PersonEmail {
+  id       Int     @id @default(autoincrement())
+  label    String?
+  value    String
+  primary  Boolean @default(false)
+  personId Int     @map("person_id")
+  person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, value])
+  @@index([personId])
+  @@index([value])
+  @@map("person_emails")
+}
+
+model PersonPhone {
+  id       Int     @id @default(autoincrement())
+  label    String?
+  value    String
+  primary  Boolean @default(false)
+  personId Int     @map("person_id")
+  person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, value])
+  @@index([personId])
+  @@index([value])
+  @@map("person_phones")
+}
+
+--- END: prisma/schema.prisma ---
+
+--- START: README.md ---
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
+
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
+
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+
+## Description
+
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+
+## Project setup
+
+```bash
+$ pnpm install
+```
+
+## Compile and run the project
+
+```bash
+# development
+$ pnpm run start
+
+# watch mode
+$ pnpm run start:dev
+
+# production mode
+$ pnpm run start:prod
+```
+
+## Run tests
+
+```bash
+# unit tests
+$ pnpm run test
+
+# e2e tests
+$ pnpm run test:e2e
+
+# test coverage
+$ pnpm run test:cov
+```
+
+## Deployment
+
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+
+```bash
+$ pnpm install -g @nestjs/mau
+$ mau deploy
+```
+
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+
+## Resources
+
+Check out a few resources that may come in handy when working with NestJS:
+
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+
+## Support
+
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+
+## Stay in touch
+
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
+
+## License
+
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+--- END: README.md ---
+
+--- START: .dockerignore ---
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.infra/
+README.md
+--- END: .dockerignore ---
+
+--- START: .gitignore ---
+# compiled output
+/dist
+/node_modules
+/build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# temp directory
+.temp
+.tmp
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+
+# terraform credencials
+.infra/.terraform/
+.infra/terraform.tfstate
+.infra/terraform.tfstate.backup
+.infra/*.tfvars # Se usar arquivos de variáveis
+*.pem # Chaves privadas SSH
+.infra/*.lock*
+.infra/terraform.tfstate
+
+# Mysql Database
+.db-data/
+
+# Traefik
+.traefik/acme.json
+
+# Prisma
+prisma/generated
+--- END: .gitignore ---
+
+--- START: package.json ---
+{
+  "name": "base-de-dados",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "db:deploy": "npx prisma migrate deploy && npx prisma generate"
+  },
+  "dependencies": {
+    "@nestjs/axios": "^4.0.0",
+    "@nestjs/bullmq": "^11.0.2",
+    "@nestjs/cache-manager": "^3.0.1",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.1",
+    "@prisma/client": "^6.6.0",
+    "bullmq": "^5.52.1",
+    "cache-manager": "^6.4.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "nestjs-zod": "^4.3.1",
+    "passport": "^0.7.0",
+    "passport-http": "^0.3.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "slugify": "^1.6.6",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@swc/cli": "^0.6.0",
+    "@swc/core": "^1.10.7",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.7",
+    "@types/passport-http": "^0.3.11",
+    "@types/supertest": "^6.0.2",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^16.0.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.4.2",
+    "prisma": "^6.6.0",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "z": "link:@types/nestjs-zod/z"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  },
+  "packageManager": "pnpm@10.8.0",
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  }
+}
+
+--- END: package.json ---
+
+--- START: tsconfig.build.json ---
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@src/*": [
+        "src/*"
+      ],
+      "@prismaClient": [
+        "prisma/generated/prisma_client"
+      ]
+    }
+  }
+}
+--- END: tsconfig.build.json ---
+
+--- START: .prettierrc ---
+{
+  "singleQuote": true,
+  "trailingComma": "all"
+}
+--- END: .prettierrc ---
+
+--- START: tsconfig.json ---
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@src/*": [
+        "src/*"
+      ],
+      "@prismaClient": [
+        "prisma/generated/prisma_client"
+      ]
+    }
+  }
+}
+--- END: tsconfig.json ---
+
+--- START: docker-compose.yml ---
+# docker-compose.yml
+# Defines the services for Traefik, Blue/Green app instances, and the database.
+# Uses environment variables from .env for configuration.
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # API and Dashboard
+      - '--api.dashboard=true'
+      # Docker Provider Configuration
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      # Entrypoints
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      # Let's Encrypt Configuration (using HTTP challenge)
+      - '--certificatesresolvers.myresolver.acme.httpchallenge=true'
+      - '--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web'
+      # Let's Encrypt Email (Required - must be set in .env)
+      - '--certificatesresolvers.myresolver.acme.email=${APP_EMAIL?Variable APP_EMAIL is not set in .env}'
+      # Let's Encrypt Storage
+      - '--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json'
+      # Log level (optional, useful for debugging)
+      # - '--log.level=DEBUG'
+      # Access Logs (optional)
+      # - '--accesslog=true'
+      # - '--accesslog.filepath=/logs/access.log'
+    ports:
+      - '80:80'    # HTTP entrypoint
+      - '443:443'  # HTTPS entrypoint
+      # - '8080:8080' # Optional: Expose Traefik API/Dashboard (secure it below)
+    volumes:
+      # Mount Docker socket to allow Traefik to detect container changes
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Mount volume for Let's Encrypt certificates
+      - ./traefik-data/acme.json:/letsencrypt/acme.json
+      # Mount volume for access logs (if enabled in command)
+      # - ./traefik-logs:/logs
+    networks:
+      - traefik
+    # Labels for Traefik Dashboard (Optional, but useful)
+    labels:
+      - "traefik.enable=true"
+      # Rule to access dashboard via a subdomain (requires DNS setup for traefik.yourdomain.com)
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      # Add Basic Authentication middleware for security
+      # Generate user:pass hash: echo $(htpasswd -nb your_user your_password) | sed -e s/\\$/\\$\\$/g
+      # Store the result in GitHub Secret: TRAEFIK_AUTH_USER_PASS
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH_USER_PASS?Variable TRAEFIK_AUTH_USER_PASS is not set in .env}"
+      - "traefik.http.routers.traefik-dashboard.middlewares=traefik-auth"
+
+  # --- Blue Application Instance ---
+  app_blue:
+    build: . # Build the image from Dockerfile in the current directory
+    # No 'image:' line - build locally, don't try to pull 'node-app'
+    container_name: node-app-blue
+    restart: unless-stopped
+    env_file: .env # Load shared environment variables
+    environment:
+      - APP_COLOR=blue # Identify the instance color
+      - APP_PORT=${APP_PORT?Variable APP_PORT is not set in .env} # Ensure APP_PORT is defined
+      - NODE_ENV=production
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+      # Blue Router: Matches the main domain, priority controlled by .env
+      - "traefik.http.routers.app_blue.rule=Host(`${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
+      - "traefik.http.routers.app_blue.entrypoints=websecure" # Use HTTPS entrypoint
+      - "traefik.http.routers.app_blue.tls.certresolver=myresolver" # Use Let's Encrypt resolver
+      - "traefik.http.routers.app_blue.priority=${BLUE_PRIORITY:-5}" # Priority set via .env (default 5)
+      - "traefik.http.routers.app_blue.service=app_blue_svc" # Route to the blue service
+      # Blue Service: Defines how Traefik connects to this container
+      - "traefik.http.services.app_blue_svc.loadbalancer.server.port=${APP_PORT}" # Forward to the app's internal port
+    depends_on:
+      - db # Ensure database is started before the app
+    networks:
+      - traefik # Connect to the Traefik network
+
+  # --- Green Application Instance ---
+  app_green:
+    build: . # Build the image from Dockerfile in the current directory
+    # No 'image:' line - build locally, don't try to pull 'node-app'
+    container_name: node-app-green
+    restart: unless-stopped
+    env_file: .env # Load shared environment variables
+    environment:
+      - APP_COLOR=green # Identify the instance color
+      - APP_PORT=${APP_PORT?Variable APP_PORT is not set in .env} # Ensure APP_PORT is defined
+      - NODE_ENV=production
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+      # Green Router: Matches the main domain, priority controlled by .env
+      - "traefik.http.routers.app_green.rule=Host(`${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
+      - "traefik.http.routers.app_green.entrypoints=websecure"
+      - "traefik.http.routers.app_green.tls.certresolver=myresolver"
+      - "traefik.http.routers.app_green.priority=${GREEN_PRIORITY:-5}" # Priority set via .env (default 5)
+      - "traefik.http.routers.app_green.service=app_green_svc" # Route to the green service
+      # Green Service: Defines how Traefik connects to this container
+      - "traefik.http.services.app_green_svc.loadbalancer.server.port=${APP_PORT}"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - traefik
+
+  # --- Database Service ---
+  db:
+    image: mysql:8.0 # Use official MySQL 8 image
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      # Database credentials loaded from .env file (ensure they are set!)
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD?Variable DB_ROOT_PASSWORD is not set in .env} # Recommended to use root pw secret
+      - MYSQL_DATABASE=${DB_NAME?Variable DB_NAME is not set in .env}
+      - MYSQL_USER=${DB_USER?Variable DB_USER is not set in .env}
+      - MYSQL_PASSWORD=${DB_PASSWORD?Variable DB_PASSWORD is not set in .env}
+    volumes:
+      # Persist database data using a named volume
+      - db-data:/var/lib/mysql
+    # Exposing the port to the host is NOT required for container-to-container communication
+    # It can be useful for debugging or external tools, but increases attack surface.
+    ports:
+      - '${DB_HOST_PORT:-3306}:3306' # Example: Map host port 3306 to container port 3306
+    networks:
+      - traefik # Allow app containers to reach the db via hostname 'db'
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    networks:
+      - traefik
+
+# Named volume for persisting database data
+volumes:
+  db-data:
+
+# Shared network for communication between containers
+networks:
+  traefik:
+    driver: bridge # Default bridge network driver
+--- END: docker-compose.yml ---
+
+--- START: .env.example ---
+# Ambiente de execução da aplicação (development | production)
+NODE_ENV=production
+
+# Configurações do banco de dados MySQL
+DATABASE_URL="mysql://root:secret@localhost:3306/appdb" # usado pelo prisma
+DB_HOST=db
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=secret
+DB_NAME=appdb
+
+# Configurações do Redis
+REDIS_URL=redis://redis:6379
+
+# Configurações do Traefik
+APP_EMAIL=email@cidadaniaja.com.br
+APP_DOMAIN=cidadaniaja.com.br
+APP_PORT=3000
+
+# Configurações do Pipedrive
+PIPEDRIVE_WEBHOOK_USER=""
+PIPEDRIVE_WEBHOOK_PASSWORD=""
+--- END: .env.example ---
+
+--- START: eslint.config.mjs ---
+// @ts-check
+import eslint from '@eslint/js';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  {
+    ignores: ['eslint.config.mjs'],
+  },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  eslintPluginPrettierRecommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+      sourceType: 'commonjs',
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn'
+    },
+  },
+);
+--- END: eslint.config.mjs ---
+
+--- START: src/organization/repositories/prisma-organization.repository.ts ---
+import { Injectable } from '@nestjs/common';
+import { BasePrismaRepository } from '@src/common/respository/base-prisma.repository';
+import { PrismaService } from '@src/prisma/prisma.service';
+import { Organization, Prisma } from '@prismaClient';
+import { IOrganizationRepository } from '../interfaces/organization-repository.interface';
+
+@Injectable()
+export class PrismaOrganizationRepository
+  extends BasePrismaRepository<
+    Organization,
+    Prisma.OrganizationWhereUniqueInput,
+    Prisma.OrganizationCreateInput,
+    Prisma.OrganizationUpdateInput,
+    Prisma.OrganizationDelegate
+  >
+  implements IOrganizationRepository {
+  protected delegate = this.prisma.organization;
+  protected entityName = 'Organization';
+
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
+}
+--- END: src/organization/repositories/prisma-organization.repository.ts ---
+
+--- START: src/organization/organization.mapper.ts ---
+import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prismaClient';
+import {
+  parseDate,
+  safeParseInt,
+} from '@src/common/mapping/utils/mapping.utils';
+import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
+import { OrganizationInput } from '@src/webhooks/dtos/pipedrive.dto';
+import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-field-mapping.helper';
+
+@Injectable()
+export class OrganizationMapper
+  implements
+  IMapper<
+    OrganizationInput,
+    Prisma.OrganizationCreateInput,
+    Prisma.OrganizationUpdateInput
+  > {
+  private readonly logger = new Logger(OrganizationMapper.name);
+
+  constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper
+  ) { }
+
+  private mapCustomFields(data: OrganizationInput): Partial<Prisma.OrganizationCreateInput> {
+    return this.customFieldMapperHelper.mapCustomFieldsToInput('organization', data.custom_fields);
+  }
+
+  toCreateInput(data: OrganizationInput): Prisma.OrganizationCreateInput {
+    const customFields = this.mapCustomFields(data);
+
+    return {
+      id: data.id,
+      name: data.name,
+      ownerId: data.owner_id,
+      visibleTo: data.visible_to,
+      labelIds: data.label_ids?.join(','),
+      pipedriveAddTime: parseDate(data.add_time),
+      pipedriveUpdateTime: parseDate(data.update_time),
+      ...customFields,
+    };
+  }
+
+  toUpdateInput(data: OrganizationInput): Prisma.OrganizationUpdateInput {
+    const customFields = this.mapCustomFields(data);
+
+    return {
+      name: data.name,
+      ownerId: data.owner_id,
+      visibleTo: data.visible_to,
+      labelIds: data.label_ids?.join(','),
+      pipedriveAddTime: parseDate(data.add_time),
+      pipedriveUpdateTime: parseDate(data.update_time),
+      ...customFields,
+    };
+  }
+}
+
+--- END: src/organization/organization.mapper.ts ---
+
+--- START: src/organization/interfaces/organization-repository.interface.ts ---
+import { Prisma, Organization } from '@prismaClient';
+import { IRepository } from '@src/common/respository/interfaces/repository.interface';
+
+export const IOrganizationRepository = Symbol('IOrganizationRepository');
+
+export type IOrganizationRepository = IRepository<
+  Organization,
+  Prisma.OrganizationWhereUniqueInput,
+  Prisma.OrganizationCreateInput,
+  Prisma.OrganizationUpdateInput
+>;
+
+--- END: src/organization/interfaces/organization-repository.interface.ts ---
+
+--- START: src/organization/organization.module.ts ---
+import { Module } from '@nestjs/common';
+import { OrganizationMapper } from './organization.mapper';
+import { PrismaOrganizationRepository } from './repositories/prisma-organization.repository';
+import { IOrganizationRepository } from './interfaces/organization-repository.interface';
+
+@Module({
+  providers: [
+    OrganizationMapper,
+    {
+      provide: IOrganizationRepository,
+      useClass: PrismaOrganizationRepository,
+    },
+  ],
+  exports: [OrganizationMapper, IOrganizationRepository],
+})
+export class OrganizationModule {}
+
+--- END: src/organization/organization.module.ts ---
+
+--- START: src/deal/deal.module.ts ---
+import { Module } from '@nestjs/common';
+import { DealMapper } from './deal.mapper';
+import { PrismaDealRepository } from './repositories/prisma-deal.repository';
+import { IDealRepository } from './interfaces/deal-repository.interface';
+
+@Module({
+  providers: [
+    DealMapper,
+    {
+      provide: IDealRepository,
+      useClass: PrismaDealRepository,
+    },
+  ],
+  exports: [DealMapper, IDealRepository],
+})
+export class DealModule {}
+
+--- END: src/deal/deal.module.ts ---
+
+--- START: src/deal/repositories/prisma-deal.repository.ts ---
+import { Injectable } from '@nestjs/common';
+import { BasePrismaRepository } from '@src/common/respository/base-prisma.repository';
+import { PrismaService } from '@src/prisma/prisma.service';
+import { Deal, Prisma } from '@prismaClient';
+import { IDealRepository } from '../interfaces/deal-repository.interface';
+
+@Injectable()
+export class PrismaDealRepository
+  extends BasePrismaRepository<
+    Deal,
+    Prisma.DealWhereUniqueInput,
+    Prisma.DealCreateInput,
+    Prisma.DealUpdateInput,
+    Prisma.DealDelegate
+  >
+  implements IDealRepository {
+  protected delegate = this.prisma.deal;
+  protected entityName = 'Deal';
+
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
+}
+--- END: src/deal/repositories/prisma-deal.repository.ts ---
+
+--- START: src/deal/deal.mapper.ts ---
+import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prismaClient';
+import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
+import { DealInput } from '@src/webhooks/dtos/pipedrive.dto';
+import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-field-mapping.helper';
+
+@Injectable()
+export class DealMapper
+  implements IMapper<DealInput, Prisma.DealCreateInput, Prisma.DealUpdateInput> {
+  private readonly logger = new Logger(DealMapper.name);
+
+  constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper
+  ) { }
+  private mapCustomFields(data: DealInput): Partial<Prisma.DealCreateInput> {
+    return this.customFieldMapperHelper.mapCustomFieldsToInput('deal', data.custom_fields);
+  }
+
+  toCreateInput(data: DealInput): Prisma.DealCreateInput {
+    const mappedFields = this.mapCustomFields(data);
+
+    const createInput: Prisma.DealCreateInput = {
+      id: data.id,
+      ...mappedFields,
+      organization: data.org_id ? { connect: { id: data.org_id } } : undefined,
+      person: data.person_id ? { connect: { id: data.person_id } } : undefined,
+    };
+
+    return createInput;
+  }
+
+  toUpdateInput(data: DealInput): Prisma.DealUpdateInput {
+    const mappedFields = this.mapCustomFields(data);
+
+    let orgUpdate:
+      | Prisma.OrganizationUpdateOneWithoutDealsNestedInput
+      | undefined;
+    if ('org_id' in data) {
+      orgUpdate =
+        data.org_id === null
+          ? { disconnect: true }
+          : { connect: { id: data.org_id } };
+    }
+
+    let personUpdate: Prisma.PersonUpdateOneWithoutDealsNestedInput | undefined;
+    if ('person_id' in data) {
+      personUpdate =
+        data.person_id === null
+          ? { disconnect: true }
+          : { connect: { id: data.person_id } };
+    }
+
+    const updateInput: Prisma.DealUpdateInput = {
+      ...mappedFields,
+      organization: orgUpdate,
+      person: personUpdate,
+    };
+
+    return updateInput;
+  }
+}
+
+--- END: src/deal/deal.mapper.ts ---
+
+--- START: src/deal/interfaces/deal-repository.interface.ts ---
+import { Prisma, Deal } from '@prismaClient';
+import { IRepository } from '@src/common/respository/interfaces/repository.interface';
+
+export const IDealRepository = Symbol('IDealRepository');
+
+export type IDealRepository = IRepository<
+  Deal,
+  Prisma.DealWhereUniqueInput,
+  Prisma.DealCreateInput,
+  Prisma.DealUpdateInput
+>;
+
+--- END: src/deal/interfaces/deal-repository.interface.ts ---
+
+--- START: src/app/app.service.ts ---
+import { Injectable } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  private readonly logger = new Logger(AppService.name);
+
+  getHello(): string {
+    const greenPriority = process.env.GREEN_PRIORITY;
+    const bluePriority = process.env.BLUE_PRIORITY;
+    this.logger.log(`Green Priority: ${greenPriority}`);
+    this.logger.log(`Blue Priority: ${bluePriority}`);
+    this.logger.log(`Active Color: ${process.env.APP_COLOR}`);
+    return `Active Color: ${process.env.APP_COLOR}, Green Priority: ${greenPriority}, Blue Priority: ${bluePriority}`;
+  }
+}
+
+--- END: src/app/app.service.ts ---
+
+--- START: src/app/app.module.ts ---
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { validateEnv } from '@src/config/validate-env';
+import { PrismaModule } from '@src/prisma/prisma.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { WebhooksModule } from '@src/webhooks/webhooks.module';
+import { OrganizationModule } from '@src/organization/organization.module';
+import { PersonModule } from '@src/person/person.module';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { APP_PIPE } from '@nestjs/core';
+import { BullModule } from '@nestjs/bullmq';
+import { EnvSchema } from '@src/config/env.schema';
+import { SynchronizationModule } from '@src/synchronization/synchronization.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService<EnvSchema>) => {
+        const redisUrlString = configService.get('REDIS_URL', { infer: true });
+        if (!redisUrlString) {
+          throw new Error('REDIS_URL não está definido nas variáveis de ambiente.');
+        }
+        const redisUrl = new URL(redisUrlString);
+        return {
+          connection: {
+            host: redisUrl.hostname,
+            port: parseInt(redisUrl.port, 10),
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
+    PrismaModule,
+    WebhooksModule,
+    OrganizationModule,
+    PersonModule,
+    SynchronizationModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService, { provide: APP_PIPE, useClass: ZodValidationPipe }],
+})
+export class AppModule { }
+--- END: src/app/app.module.ts ---
+
+--- START: src/app/app.controller.spec.ts ---
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});
+
+--- END: src/app/app.controller.spec.ts ---
+
+--- START: src/app/app.controller.ts ---
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+
+--- END: src/app/app.controller.ts ---
+
+--- START: src/main.ts ---
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+import { Logger } from '@nestjs/common';
+import 'tsconfig-paths/register';
+import { ConfigService } from '@nestjs/config';
+import { EnvSchema } from './config/env.schema';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
+
+  const logger = new Logger('Bootstrap');
+  const configService = app.get(ConfigService<EnvSchema>);
+
+  app.enableShutdownHooks();
+
+  const port = configService.get('PORT', { infer: true });
+  await app.listen(port as number);
+  logger.log(`HTTP Application listening on port ${port}`);
+}
+
+void bootstrap();
+--- END: src/main.ts ---
+
+--- START: src/synchronization/synchronization.module.ts ---
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { OrganizationModule } from '@src/organization/organization.module';
+import { PersonModule } from '@src/person/person.module';
+import { RelatedEntityEnsureService } from './related-entity-ensure.service';
+import { ENTITY_SYNC_QUEUE_TOKEN } from '@src/common/utils/queues.types';
+import { EntitySyncProcessor } from './entity-sync.processor';
+import { ConfigModule } from '@nestjs/config';
+import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
+
+@Module({
+    imports: [
+        OrganizationModule,
+        PersonModule,
+        ConfigModule,
+        BullModule.registerQueueAsync({
+            name: ENTITY_SYNC_QUEUE_TOKEN,
+            useFactory: async () => ({
+
+                defaultJobOptions: DEFAULT_JOB_OPTIONS,
+            }),
+        }),
+    ],
+    providers: [
+        RelatedEntityEnsureService,
+        EntitySyncProcessor,
+    ],
+    exports: [RelatedEntityEnsureService],
+})
+export class SynchronizationModule { }
+--- END: src/synchronization/synchronization.module.ts ---
+
+--- START: src/synchronization/related-entity-ensure.service.ts ---
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { Prisma } from '@prismaClient';
+import { IOrganizationRepository } from '@src/organization/interfaces/organization-repository.interface';
+import { IPersonRepository } from '@src/person/interfaces/person-repository.interface';
+import {
+    EntitySyncJobName,
+    EntitySyncJobPayload,
+    ENTITY_SYNC_QUEUE_TOKEN,
+    ManagedEntityType,
+} from '@src/common/utils/queues.types';
+import { IRepository } from '@src/common/respository/interfaces/repository.interface';
+
+@Injectable()
+export class RelatedEntityEnsureService {
+    private readonly logger = new Logger(RelatedEntityEnsureService.name);
+
+    constructor(
+        @Inject(IOrganizationRepository) private readonly orgRepository: IOrganizationRepository,
+        @Inject(IPersonRepository) private readonly personRepository: IPersonRepository,
+        @InjectQueue(ENTITY_SYNC_QUEUE_TOKEN)
+        private readonly entitySyncQueue: Queue<EntitySyncJobPayload, any, EntitySyncJobName>,
+    ) { }
+
+    async ensureExists(
+        entityType: ManagedEntityType,
+        entityId: number | null | undefined,
+    ): Promise<void> {
+        if (!entityId) {
+            this.logger.debug(`Skipping ensureExists for ${entityType}: entityId is null or undefined.`);
+            return;
+        }
+
+        const repository = this.getRepository(entityType);
+
+        try {
+            const entityExists = await repository.findById(entityId);
+            if (entityExists) {
+                this.logger.debug(`Entity ${entityType} ID ${entityId} already exists. No action needed.`);
+                return;
+            }
+        } catch (error) {
+            this.logger.warn(
+                `Error checking existence for ${entityType} ID ${entityId}, assuming it doesn't exist. Error: ${error}`,
+            );
+        }
+
+        this.logger.log(`Entity ${entityType} ID ${entityId} not found. Creating placeholder and queueing for sync.`);
+        try {
+            await repository.createPlaceholder({ id: entityId });
+            const jobName = this.getJobName(entityType);
+            await this.entitySyncQueue.add(jobName, { entityType, entityId }, {
+                jobId: `sync-${entityType}-${entityId}-${Date.now()}`,
+            });
+            this.logger.log(`Successfully queued ${entityType} ID ${entityId} for sync job '${jobName}'.`);
+        } catch (creationError) {
+            if (creationError instanceof Prisma.PrismaClientKnownRequestError && creationError.code === 'P2002') {
+                this.logger.warn(
+                    `Placeholder for ${entityType} ID ${entityId} likely created concurrently (P2002). Sync job might already be queued or will be picked up.`,
+                );
+            } else {
+                this.logger.error(
+                    `Failed to create placeholder or queue sync for ${entityType} ID ${entityId}: ${creationError}`,
+                );
+                throw creationError;
+            }
+        }
+    }
+
+    private getRepository(
+        entityType: ManagedEntityType,
+    ): IRepository<any, any, any, any> {
+        if (entityType === 'organization') {
+            return this.orgRepository;
+        } else if (entityType === 'person') {
+            return this.personRepository;
+        }
+        throw new Error(`Invalid managed entity type for repository: ${entityType}`);
+    }
+
+    private getJobName(entityType: ManagedEntityType): EntitySyncJobName {
+        if (entityType === 'organization') {
+            return EntitySyncJobName.SYNC_ORGANIZATION;
+        } else if (entityType === 'person') {
+            return EntitySyncJobName.SYNC_PERSON;
+        }
+        throw new Error(`Invalid managed entity type for job name: ${entityType}`);
+    }
+}
+--- END: src/synchronization/related-entity-ensure.service.ts ---
+
+--- START: src/synchronization/entity-sync.processor.ts ---
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { Logger } from '@nestjs/common';
+import { ENTITY_SYNC_QUEUE_TOKEN, EntitySyncJobName, EntitySyncJobPayload } from '@src/common/utils/queues.types';
+
+@Processor(ENTITY_SYNC_QUEUE_TOKEN)
+export class EntitySyncProcessor extends WorkerHost {
+    private readonly logger = new Logger(EntitySyncProcessor.name);
+
+    async process(job: Job<EntitySyncJobPayload, any, EntitySyncJobName>): Promise<void> {
+        const { entityType, entityId } = job.data;
+        this.logger.log(`Starting sync for ${entityType} ID ${entityId}, job ID: ${job.id}`);
+
+        try {
+
+            const pipedriveData = null;
+
+            if (!pipedriveData) {
+                this.logger.warn(`No data found in Pipedrive for ${entityType} ID ${entityId}. Marking sync as failed or handling appropriately.`);
+                return;
+            }
+
+            this.logger.log(`Successfully synced ${entityType} ID ${entityId}.`);
+        } catch (error) {
+            this.logger.error(`Error syncing ${entityType} ID ${entityId}: ${error}`, error.stack);
+            throw error;
+        }
+    }
+}
+--- END: src/synchronization/entity-sync.processor.ts ---
+
+--- START: src/config/validate-env.ts ---
+import { envSchema } from './env.schema';
+
+export function validateEnv() {
+  const result = envSchema.safeParse(process.env);
+
+  if (!result.success) {
+    console.error(
+      '❌ Invalid environment variables:',
+      JSON.stringify(result.error.format(), null, 2),
+    );
+    process.exit(1);
+  }
+
+  return result.data;
+}
+
+--- END: src/config/validate-env.ts ---
+
+--- START: src/config/env.schema.ts ---
+import { z } from 'zod';
+
+export const envSchema = z.object({
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
+  PORT: z.coerce.number().default(3000),
+  DATABASE_URL: z.string().url(),
+  CACHE_TTL_SECONDS: z.coerce.number().default(3600),
+  PIPEDRIVE_WEBHOOK_USER: z.string().min(1),
+  PIPEDRIVE_WEBHOOK_PASSWORD: z.string().min(1),
+
+  REDIS_URL: z.string().url(),
+});
+
+export type EnvSchema = z.infer<typeof envSchema>;
+
+--- END: src/config/env.schema.ts ---
+
+--- START: src/auth/strategies/basic.strategy.ts ---
+import { BasicStrategy as Strategy } from 'passport-http';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
+import { EnvSchema } from '@src/config/env.schema';
+
+@Injectable()
+export class BasicStrategy extends PassportStrategy(Strategy, 'basic') {
+  private readonly logger = new Logger(BasicStrategy.name);
+
+  constructor(private readonly configService: ConfigService<EnvSchema>) {
+    super();
+  }
+
+  public validate = (username: string, pass: string): boolean => {
+    const expectedUser = this.configService.get('PIPEDRIVE_WEBHOOK_USER', {
+      infer: true,
+    });
+    const expectedPassword = this.configService.get(
+      'PIPEDRIVE_WEBHOOK_PASSWORD',
+      { infer: true },
+    );
+
+    this.logger.debug(`Validating Basic Auth: received user '${username}'`);
+
+    if (expectedUser === username && expectedPassword === pass) {
+      this.logger.log('Basic Authentication successful for Pipedrive webhook.');
+
+      return true;
+    } else {
+      this.logger.warn(`Basic Authentication failed for user '${username}'.`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+  };
+}
+
+--- END: src/auth/strategies/basic.strategy.ts ---
+
+--- START: src/auth/auth.module.ts ---
+import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule } from '@nestjs/config';
+import { BasicStrategy } from './strategies/basic.strategy';
+
+@Module({
+  imports: [PassportModule, ConfigModule],
+  providers: [BasicStrategy],
+})
+export class AuthModule {}
+
+--- END: src/auth/auth.module.ts ---
+
+--- START: src/auth/guards/basic-auth.guard.ts ---
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class BasicAuthGuard extends AuthGuard('basic') {}
+
+--- END: src/auth/guards/basic-auth.guard.ts ---
+
+--- START: src/person/person.module.ts ---
+import { Module } from '@nestjs/common';
+import { PersonMapper } from './person.mapper';
+import { PrismaPersonRepository } from './repositories/prisma-person.repository';
+import { IPersonRepository } from './interfaces/person-repository.interface';
+
+@Module({
+  providers: [
+    PersonMapper,
+    {
+      provide: IPersonRepository,
+      useClass: PrismaPersonRepository,
+    },
+  ],
+  exports: [PersonMapper, IPersonRepository],
+})
+export class PersonModule {}
+
+--- END: src/person/person.module.ts ---
+
+--- START: src/person/repositories/prisma-person.repository.ts ---
+import { Injectable } from '@nestjs/common';
+import { BasePrismaRepository } from '@src/common/respository/base-prisma.repository';
+import { PrismaService } from '@src/prisma/prisma.service';
+import { Person, Prisma } from '@prismaClient';
+import { IPersonRepository } from '../interfaces/person-repository.interface';
+
+@Injectable()
+export class PrismaPersonRepository
+  extends BasePrismaRepository<
+    Person,
+    Prisma.PersonWhereUniqueInput,
+    Prisma.PersonCreateInput,
+    Prisma.PersonUpdateInput,
+    Prisma.PersonDelegate
+  >
+  implements IPersonRepository {
+  protected delegate = this.prisma.person;
+  protected entityName = 'Person';
+
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
+}
+--- END: src/person/repositories/prisma-person.repository.ts ---
+
+--- START: src/person/person.mapper.ts ---
+import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prismaClient';
+import {
+  parseDate,
+} from '@src/common/mapping/utils/mapping.utils';
+import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
+import {
+  EmailInput,
+  PersonInput,
+  PhoneInput,
+} from '@src/webhooks/dtos/pipedrive.dto';
+import { CustomFieldMapperHelper } from '@src/webhooks/custom-fields/custom-field-mapping.helper';
+
+@Injectable()
+export class PersonMapper
+  implements
+  IMapper<PersonInput, Prisma.PersonCreateInput, Prisma.PersonUpdateInput> {
+  private readonly logger = new Logger(PersonMapper.name);
+
+  constructor(private readonly customFieldMapperHelper: CustomFieldMapperHelper
+  ) { }
+  private mapCustomFields(data: PersonInput): Partial<Prisma.PersonCreateInput> {
+    return this.customFieldMapperHelper.mapCustomFieldsToInput('person', data.custom_fields);
+  }
+  private prepareEmailInput(
+    emails: EmailInput[] | null,
+  ): Prisma.PersonEmailCreateNestedManyWithoutPersonInput {
+    const emailsToCreate = (emails || [])
+      .map((email) => ({
+        label: email.label,
+        value: email.value,
+        primary: email.primary || false,
+      }))
+      .filter((e) => e.value);
+    return { create: emailsToCreate };
+  }
+
+  private preparePhoneInput(
+    phones: PhoneInput[] | null,
+  ): Prisma.PersonPhoneCreateNestedManyWithoutPersonInput {
+    const phonesToCreate = (phones || [])
+      .map((phone) => ({
+        label: phone.label,
+        value: phone.value,
+        primary: phone.primary || false,
+      }))
+      .filter((p) => p.value);
+    return { create: phonesToCreate };
+  }
+
+  toCreateInput(data: PersonInput): Prisma.PersonCreateInput {
+    const customFields = this.mapCustomFields(data);
+
+    return {
+      id: data.id,
+      name: data.name,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      ownerId: data.owner_id,
+      pipedriveAddTime: parseDate(data.add_time),
+      pipedriveUpdateTime: parseDate(data.update_time),
+      visibleTo: data.visible_to,
+      ...customFields,
+      emails: this.prepareEmailInput(data.emails),
+      phones: this.preparePhoneInput(data.phones),
+      organization: data.org_id ? { connect: { id: data.org_id } } : undefined,
+    };
+  }
+
+  toUpdateInput(data: PersonInput): Prisma.PersonUpdateInput {
+    const customFields = this.mapCustomFields(data);
+
+    let orgUpdate:
+      | Prisma.OrganizationUpdateOneWithoutPersonsNestedInput
+      | undefined;
+    if (data.org_id !== undefined) {
+      orgUpdate =
+        data.org_id === null
+          ? { disconnect: true }
+          : { connect: { id: data.org_id } };
+    }
+
+    return {
+      name: data.name,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      ownerId: data.owner_id,
+      pipedriveAddTime: parseDate(data.add_time),
+      pipedriveUpdateTime: parseDate(data.update_time),
+      visibleTo: data.visible_to,
+      ...customFields,
+      emails: { deleteMany: {}, ...this.prepareEmailInput(data.emails) },
+      phones: { deleteMany: {}, ...this.preparePhoneInput(data.phones) },
+      organization: orgUpdate,
+    };
+  }
+}
+
+--- END: src/person/person.mapper.ts ---
+
+--- START: src/person/interfaces/person-repository.interface.ts ---
+import { Prisma, Person } from '@prismaClient';
+import { IRepository } from '@src/common/respository/interfaces/repository.interface';
+
+export const IPersonRepository = Symbol('IPersonRepository');
+
+export type IPersonRepository = IRepository<
+  Person,
+  Prisma.PersonWhereUniqueInput,
+  Prisma.PersonCreateInput,
+  Prisma.PersonUpdateInput
+>;
+
+--- END: src/person/interfaces/person-repository.interface.ts ---
+
+--- START: src/prisma/prisma.service.ts ---
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '@prismaClient';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  async onModuleInit() {
+    await this.$connect();
+  }
+}
+
+--- END: src/prisma/prisma.service.ts ---
+
+--- START: src/prisma/prisma.module.ts ---
+import { Global, Module } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+
+@Global()
+@Module({
+  providers: [PrismaService],
+  exports: [PrismaService],
+})
+export class PrismaModule {}
+
+--- END: src/prisma/prisma.module.ts ---
+
+--- START: src/common/respository/base-prisma.repository.ts ---
+import { Logger } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prismaClient';
+import { logError } from '@src/common/utils/logger.utils';
+import { IRepository } from './interfaces/repository.interface';
+
+export abstract class BasePrismaRepository<
+  T extends { id: number },
+  W extends { id?: number },
+  C,
+  U extends object,
+  D extends {
+    upsert: (args: { where: W; create: C; update: U; select?: any; include?: any }) => Promise<T>;
+    findUnique: (args: { where: W; select?: any; include?: any }) => Promise<T | null>;
+    create: (args: { data: C; select?: any; include?: any }) => Promise<T>;
+  }
+> implements IRepository<T, W, C, U> {
+  protected readonly logger: Logger;
+  protected abstract delegate: D;
+  protected abstract entityName: string;
+
+  constructor(protected readonly prisma: PrismaClient) {
+    this.logger = new Logger(this.constructor.name);
+  }
+
+  async upsert(where: W, create: C, update: U): Promise<T | null> {
+    const id = where?.id ?? 'unknown';
+    try {
+      const updateWithSyncStatus = 'sync_status' in update
+        ? { ...update, sync_status: 'synced' }
+        : update;
+
+      const result = await this.delegate.upsert({
+        where,
+        create,
+        update: updateWithSyncStatus,
+      });
+
+      this.logger.log(`Upserted ${this.entityName} with ID: ${id}`);
+      return result;
+    } catch (error) {
+      logError(`Error in ${this.entityName} upsert for ID ${id}`, error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(
+          `Prisma Error Code: ${error.code}, Meta: ${JSON.stringify(error.meta)}`,
+        );
+        if (error.code === 'P2003') {
+          this.logger.error(
+            `Foreign key constraint failed during ${this.entityName} upsert for ID ${id}.`,
+          );
+        } else if (error.code === 'P2025') {
+          this.logger.error(
+            `Record not found during ${this.entityName} upsert. ID: ${id}`,
+          );
+        }
+      }
+      return null;
+    }
+  }
+
+  async findById(id: number): Promise<T | null> {
+    try {
+
+      const result = await this.delegate.findUnique({
+        where: { id } as W,
+      });
+      return result;
+    } catch (error) {
+      logError(`Error in ${this.entityName} findById for ID ${id}`, error);
+      return null;
+    }
+  }
+
+  async createPlaceholder({ id }: { id: number }): Promise<T | null> {
+    try {
+
+      const placeholderData = {
+        id,
+        sync_status: 'placeholder',
+      } as C;
+
+      const result = await this.delegate.create({
+        data: placeholderData,
+      });
+
+      this.logger.log(`Created placeholder for ${this.entityName} with ID: ${id}`);
+      return result;
+    } catch (error) {
+      logError(`Error in ${this.entityName} createPlaceholder for ID ${id}`, error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+
+        this.logger.warn(`Placeholder for ${this.entityName} ID ${id} likely already exists due to P2002 error. Attempting to fetch.`);
+        return this.findById(id);
+      }
+      return null;
+    }
+  }
+}
+--- END: src/common/respository/base-prisma.repository.ts ---
+
+--- START: src/common/respository/interfaces/repository.interface.ts ---
+export interface IRepository<Entity, WhereInput, CreateInput, UpdateInput> {
+  upsert(
+    where: WhereInput,
+    create: CreateInput,
+    update: UpdateInput,
+  ): Promise<Entity | null>;
+  findById(id: number): Promise<Entity | null>;
+  createPlaceholder({ id }: { id: number }): Promise<Entity | null>;
+}
+--- END: src/common/respository/interfaces/repository.interface.ts ---
+
+--- START: src/common/mapping/utils/mapping.utils.ts ---
+export function parseDate(dateString: string | null | undefined): Date | null {
+  if (!dateString) return null;
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
+}
+
+export function safeParseInt(val: any): number | null {
+  if (val === null || val === undefined) return null;
+  const num = parseInt(String(val), 10);
+  return isNaN(num) ? null : num;
+}
+
+export function safeParseFloat(val: any): number | null {
+  if (val === null || val === undefined) return null;
+  const num = parseFloat(String(val));
+  return isNaN(num) ? null : num;
+}
+
+--- END: src/common/mapping/utils/mapping.utils.ts ---
+
+--- START: src/common/mapping/interfaces/mapper.interface.ts ---
+export interface IMapper<InputDto, CreateInput, UpdateInput> {
+  toCreateInput(dto: InputDto): CreateInput;
+  toUpdateInput(dto: InputDto): UpdateInput;
+}
+
+--- END: src/common/mapping/interfaces/mapper.interface.ts ---
+
+--- START: src/common/utils/queues.config.ts ---
+import { QueueOptions } from 'bullmq';
+
+export const DEFAULT_JOB_OPTIONS: QueueOptions['defaultJobOptions'] = {
+    attempts: 3,
+    backoff: {
+        type: 'exponential',
+        delay: 1000,
+    },
+    removeOnComplete: true,
+    removeOnFail: false,
+};
+--- END: src/common/utils/queues.config.ts ---
+
+--- START: src/common/utils/queues.types.ts ---
+/**
+ * Token de injeção para a fila de webhooks no NestJS.
+ * Usado para injetar a instância da fila (`@InjectQueue(WEBHOOK_QUEUE_TOKEN)`).
+ */
+export const WEBHOOK_QUEUE_TOKEN = 'webhook-processing-queue';
+
+/**
+ * Nomes dos jobs que podem ser processados pela fila de webhooks.
+ */
+export const enum WebhookJobName {
+    PROCESS_PERSON_WEBHOOK = 'process-person-webhook',
+    PROCESS_ORGANIZATION_WEBHOOK = 'process-organization-webhook',
+    PROCESS_DEAL_WEBHOOK = 'process-deal-webhook',
+    PROCESS_UNKNOWN_WEBHOOK = 'process-unknown-webhook',
+}
+
+
+export type ManagedEntityType = 'organization' | 'person';
+
+export const ENTITY_SYNC_QUEUE_TOKEN = 'entity-sync-queue';
+
+export enum EntitySyncJobName {
+    SYNC_ORGANIZATION = 'sync-organization',
+    SYNC_PERSON = 'sync-person',
+}
+
+export type EntitySyncJobPayload = {
+    entityType: ManagedEntityType;
+    entityId: number;
+};
+--- END: src/common/utils/queues.types.ts ---
+
+--- START: src/common/utils/logger.utils.ts ---
+import { Logger } from '@nestjs/common';
+
+export const logError = (message: string, error: unknown) => {
+  if (error instanceof Error) {
+    Logger.error(`${message}: ${error.message}`, error.stack);
+    return;
+  }
+  Logger.error(`${message}`, error);
+};
+
+--- END: src/common/utils/logger.utils.ts ---
+
+--- START: src/common/slugify.service.ts ---
+import { Injectable } from '@nestjs/common';
+import slugify from 'slugify';
+
+@Injectable()
+export class SlugifyService {
+  toSlug(value: string): string {
+    return slugify(value, { lower: true, strict: true, replacement: '_' });
+  }
+}
+
+--- END: src/common/slugify.service.ts ---
+
+--- START: src/webhooks/processing/strategies/organization-upsert.strategy.ts ---
+import { Injectable, Inject } from '@nestjs/common';
+import { OrganizationMapper } from '@src/organization/organization.mapper';
+import { IOrganizationRepository } from '@src/organization/interfaces/organization-repository.interface';
+import { OrganizationInput } from '@src/webhooks/dtos/pipedrive.dto';
+import { Prisma, Organization } from '@prismaClient';
+import { BaseUpsertStrategy } from './base-upsert.strategy';
+
+@Injectable()
+export class OrganizationUpsertStrategy extends BaseUpsertStrategy<
+  Organization,
+  OrganizationInput,
+  Prisma.OrganizationCreateInput,
+  Prisma.OrganizationUpdateInput,
+  Prisma.OrganizationWhereUniqueInput
+> {
+  constructor(
+    @Inject(IOrganizationRepository)
+    orgRepository: IOrganizationRepository,
+    @Inject(OrganizationMapper)
+    mapper: OrganizationMapper,
+  ) {
+    super(mapper, orgRepository, 'organization');
+  }
+}
+
+--- END: src/webhooks/processing/strategies/organization-upsert.strategy.ts ---
+
+--- START: src/webhooks/processing/strategies/person-upsert.strategy.ts ---
+import { Injectable, Inject } from '@nestjs/common';
+import { PersonMapper } from '@src/person/person.mapper';
+import { IPersonRepository } from '@src/person/interfaces/person-repository.interface';
+import { BaseUpsertStrategy, PrismaModelResult } from './base-upsert.strategy';
+import { Prisma, Person } from '@prismaClient';
+import { PersonInput } from '@src/webhooks/dtos/pipedrive.dto';
+import { RelatedEntityEnsureService } from '@src/synchronization/related-entity-ensure.service';
+
+@Injectable()
+export class PersonUpsertStrategy extends BaseUpsertStrategy<
+  Person,
+  PersonInput,
+  Prisma.PersonCreateInput,
+  Prisma.PersonUpdateInput,
+  Prisma.PersonWhereUniqueInput
+> {
+  constructor(
+    @Inject(PersonMapper) personMapper: PersonMapper,
+    @Inject(IPersonRepository) personRepository: IPersonRepository,
+    private readonly relatedEntityEnsureService: RelatedEntityEnsureService,
+  ) {
+    super(personMapper, personRepository, 'person');
+  }
+
+  async upsert(data: PersonInput): Promise<PrismaModelResult | null> {
+    const pipedriveId = data.id;
+    if (!pipedriveId) {
+      this.logger.error(`Cannot upsert ${this.entityType}: Missing Pipedrive ID.`);
+      return null;
+    }
+
+    try {
+      if ('org_id' in data) {
+        await this.relatedEntityEnsureService.ensureExists('organization', data.org_id);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to ensure related organization for Person ID ${pipedriveId}: ${error}`, error.stack);
+      throw error;
+    }
+
+    return super.upsert(data);
+  }
+}
+--- END: src/webhooks/processing/strategies/person-upsert.strategy.ts ---
+
+--- START: src/webhooks/processing/strategies/deal-upsert.strategy.ts ---
+import { Injectable, Inject } from '@nestjs/common';
+import { DealMapper } from '@src/deal/deal.mapper';
+import { IDealRepository } from '@src/deal/interfaces/deal-repository.interface';
+import { BaseUpsertStrategy, PrismaModelResult } from './base-upsert.strategy';
+import { Prisma, Deal } from '@prismaClient';
+import { DealInput } from '@src/webhooks/dtos/pipedrive.dto';
+import { RelatedEntityEnsureService } from '@src/synchronization/related-entity-ensure.service';
+
+@Injectable()
+export class DealUpsertStrategy extends BaseUpsertStrategy<
+  Deal,
+  DealInput,
+  Prisma.DealCreateInput,
+  Prisma.DealUpdateInput,
+  Prisma.DealWhereUniqueInput
+> {
+  constructor(
+    @Inject(DealMapper) dealMapper: DealMapper,
+    @Inject(IDealRepository) dealRepository: IDealRepository,
+    private readonly relatedEntityEnsureService: RelatedEntityEnsureService,
+  ) {
+    super(dealMapper, dealRepository, 'deal');
+  }
+
+  async upsert(data: DealInput): Promise<PrismaModelResult | null> {
+    const pipedriveId = data.id;
+    if (!pipedriveId) {
+      this.logger.error(`Cannot upsert ${this.entityType}: Missing Pipedrive ID.`);
+      return null;
+    }
+
+    try {
+      await this.relatedEntityEnsureService.ensureExists('organization', data.org_id);
+      await this.relatedEntityEnsureService.ensureExists('person', data.person_id);
+    } catch (error) {
+      this.logger.error(`Failed to ensure related entities for Deal ID ${pipedriveId}: ${error}`, error.stack);
+      throw error;
+    }
+
+    return super.upsert(data);
+  }
+}
+--- END: src/webhooks/processing/strategies/deal-upsert.strategy.ts ---
+
+--- START: src/webhooks/processing/strategies/base-upsert.strategy.ts ---
+import { Logger, Injectable } from '@nestjs/common';
+import { logError } from '@src/common/utils/logger.utils';
+import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
+import { IRepository } from '@src/common/respository/interfaces/repository.interface';
+import { Person, Organization } from '@prismaClient';
+
+export type PrismaModelResult =
+  | (Person & { entityType: 'person' })
+  | (Organization & { entityType: 'organization' });
+
+export type PipedriveData = {
+  id: number;
+  custom_fields?: Record<string, any> | null;
+  [key: string]: any;
+};
+
+export interface IUpsertStrategy {
+  upsert(data: PipedriveData): Promise<PrismaModelResult | null>;
+}
+
+@Injectable()
+export class BaseUpsertStrategy<
+  Entity extends { id: number },
+  InputDto extends PipedriveData,
+  CreateInput,
+  UpdateInput,
+  WhereInput extends { id?: number },
+> implements IUpsertStrategy
+{
+  protected readonly logger: Logger;
+
+  constructor(
+    protected readonly mapper: IMapper<InputDto, CreateInput, UpdateInput>,
+    protected readonly repository: IRepository<
+      Entity,
+      WhereInput,
+      CreateInput,
+      UpdateInput
+    >,
+    protected readonly entityType: 'person' | 'organization' | 'deal',
+  ) {
+    this.logger = new Logger(this.constructor.name);
+  }
+
+  async upsert(data: InputDto): Promise<PrismaModelResult | null> {
+    const pipedriveId = data.id;
+    if (!pipedriveId) {
+      this.logger.error(
+        `Cannot upsert ${this.entityType}: Missing Pipedrive ID.`,
+      );
+      return null;
+    }
+    this.logger.log(
+      `Mapping and upserting ${this.entityType} with Pipedrive ID: ${pipedriveId}`,
+    );
+
+    try {
+      const createInput = this.mapper.toCreateInput(data);
+      const updateInput = this.mapper.toUpdateInput(data);
+
+      const whereInput = { id: pipedriveId } as WhereInput;
+
+      const result: Entity | null = await this.repository.upsert(
+        whereInput,
+        createInput,
+        updateInput,
+      );
+
+      if (!result) {
+        this.logger.warn(
+          `${this.entityType} repository returned null for upsert ID: ${pipedriveId}`,
+        );
+        return null;
+      }
+
+      return {
+        ...result,
+        entityType: this.entityType,
+      } as unknown as PrismaModelResult;
+    } catch (error) {
+      logError(
+        `Error during ${this.entityType} upsert strategy for ID ${pipedriveId}`,
+        error,
+      );
+      return null;
+    }
+  }
+}
+
+--- END: src/webhooks/processing/strategies/base-upsert.strategy.ts ---
+
+--- START: src/webhooks/processing/webhook-processing.service.ts ---
+import { Injectable, Logger } from '@nestjs/common';
+import { OrganizationUpsertStrategy } from './strategies/organization-upsert.strategy';
+import { PipedriveWebhookPayloadDto } from '../dtos/pipedrive-webhook.zod';
+import { PipedriveAction, PipedriveEntity } from '../dtos/pipedrive.enum';
+import {
+  IUpsertStrategy,
+  PipedriveData,
+  PrismaModelResult,
+} from './strategies/base-upsert.strategy';
+import { logError } from '@src/common/utils/logger.utils';
+import { PersonUpsertStrategy } from './strategies/person-upsert.strategy';
+import { DealUpsertStrategy } from './strategies/deal-upsert.strategy';
+import { extractWebhookMetadata } from '../utils/webhook-payload.utils';
+
+@Injectable()
+export class WebhookProcessingService {
+  private readonly logger = new Logger(WebhookProcessingService.name);
+  private readonly strategyMap: Partial<Record<PipedriveEntity, IUpsertStrategy>>;
+
+  constructor(
+    private readonly orgStrategy: OrganizationUpsertStrategy,
+    private readonly personStrategy: PersonUpsertStrategy,
+    private readonly dealStrategy: DealUpsertStrategy,
+  ) {
+    this.strategyMap = {
+      [PipedriveEntity.ORGANIZATION]: this.orgStrategy,
+      [PipedriveEntity.PERSON]: this.personStrategy,
+      [PipedriveEntity.DEAL]: this.dealStrategy,
+    };
+  }
+
+  async processWebhook(
+    payload: PipedriveWebhookPayloadDto,
+  ): Promise<PrismaModelResult | null> {
+    const { entity, action, pipedriveId, rawEntity } = extractWebhookMetadata(payload);
+
+
+    this.logger.debug(
+      `Processing Service: Executing logic for: ${action} ${rawEntity || entity} (Pipedrive ID: ${pipedriveId})`,
+    );
+
+    if (entity === 'unknown-entity' || action === 'unknown-action') {
+      this.logger.warn(
+        `Invalid meta for processing (Pipedrive ID: ${pipedriveId}). Entity: '${rawEntity || entity}', Action: '${action}'. Skipping. Meta: ${JSON.stringify(payload.meta)}`,
+      );
+      throw new Error(`Invalid meta data (entity or action unknown) for Pipedrive ID: ${pipedriveId}`);
+    }
+
+    const data = payload.data as PipedriveData | undefined;
+
+
+    if (!data) {
+      this.logger.warn(
+        `Processing for ${action} ${entity} (Pipedrive ID: ${pipedriveId}) has no data. Skipping.`,
+      );
+      return null;
+    }
+
+    if (action !== PipedriveAction.CREATE && action !== PipedriveAction.CHANGE) {
+      this.logger.warn(
+        `Processing for ${action} ${entity} (Pipedrive ID: ${pipedriveId}) - Only CREATE and CHANGE actions are supported. Skipping.`,
+      );
+      return null;
+    }
+
+    const strategy = this.getStrategy(entity);
+
+    if (!strategy) {
+      this.logger.warn(
+        `No upsert strategy found for entity type: '${entity}' (Pipedrive ID: ${pipedriveId}). Skipping.`,
+      );
+      throw new Error(`No strategy for ${entity} (Pipedrive ID: ${pipedriveId})`);
+    }
+
+    try {
+      const result = await strategy.upsert(data as PipedriveData);
+
+      if (!result) {
+        this.logger.warn(
+          `Upsert strategy returned null for ${entity} Pipedrive ID ${pipedriveId}.`,
+        );
+        return null;
+      } else {
+        this.logger.log(
+          `Successfully executed strategy for ${entity} Pipedrive ID ${pipedriveId}. Result ID: ${result.id}`,
+        );
+        return result;
+      }
+    } catch (error) {
+      logError(
+        `Error during ${entity} processing logic for Pipedrive ID ${pipedriveId}`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  private getStrategy(entity: PipedriveEntity): IUpsertStrategy | undefined {
+    return this.strategyMap[entity];
+  }
+}
+--- END: src/webhooks/processing/webhook-processing.service.ts ---
+
+--- START: src/webhooks/processing/webhook.processor.ts ---
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { Logger } from '@nestjs/common';
+import { WebhookProcessingService } from './webhook-processing.service';
+import { PipedriveWebhookPayloadDto } from '../dtos/pipedrive-webhook.zod';
+import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from '@src/common/utils/queues.types';
+import { logError } from '@src/common/utils/logger.utils';
+import { extractWebhookMetadata } from '../utils/webhook-payload.utils';
+
+@Processor(WEBHOOK_QUEUE_TOKEN)
+export class WebhookProcessor extends WorkerHost {
+    private readonly logger: Logger;
+
+    constructor(
+        private readonly webhookProcessingService: WebhookProcessingService,
+    ) {
+        super();
+        this.logger = new Logger(WebhookProcessor.name);
+    }
+
+    async process(job: Job<PipedriveWebhookPayloadDto, any, WebhookJobName>): Promise<void> {
+        const payload = job.data;
+        const jobName = job.name;
+        const { entity, action, pipedriveId, rawEntity } = extractWebhookMetadata(payload);
+        const queueName = job.queueName;
+        const jobId = job.id;
+
+        this.logger.log(
+            `[Queue: ${queueName}] Processing job ID: ${jobId} (Job Name: ${jobName}) - ${action} ${rawEntity || entity} (Pipedrive ID: ${pipedriveId}) - Attempt #${job.attemptsMade + 1}`,
+        );
+
+        try {
+            switch (jobName) {
+                case WebhookJobName.PROCESS_PERSON_WEBHOOK:
+                case WebhookJobName.PROCESS_ORGANIZATION_WEBHOOK:
+                case WebhookJobName.PROCESS_DEAL_WEBHOOK:
+                    this.logger.debug(`Job ${jobId} (Name: ${jobName}) is a known Pipedrive entity webhook. Delegating to WebhookProcessingService.`);
+                    await this.webhookProcessingService.processWebhook(payload);
+                    break;
+                case WebhookJobName.PROCESS_UNKNOWN_WEBHOOK:
+                    this.logger.warn(
+                        `[Queue: ${queueName}] Job ID: ${jobId} (Name: ${jobName}) for an unknown entity: '${rawEntity || entity}'. Check payload for details.`,
+                    );
+                    break;
+                default:
+                    this.logger.error(
+                        `[Queue: ${queueName}] Unrecognized job name: '${jobName}' for job ID: ${jobId}. This indicates a potential issue in job producer or constants.`,
+                    );
+                    throw new Error(`Unrecognized job name: ${jobName}`);
+            }
+
+            this.logger.log(
+                `[Queue: ${queueName}] Successfully processed job ID: ${jobId} (Job Name: ${jobName}) for Pipedrive ${rawEntity || entity} ID ${pipedriveId}`,
+            );
+        } catch (error) {
+            logError(
+                `[Queue: ${queueName}] Failed to process job ID: ${jobId} (Job Name: ${jobName}, Pipedrive ID: ${pipedriveId}, Attempt #${job.attemptsMade + 1})`,
+                error,
+            );
+            throw error;
+        }
+    }
+}
+--- END: src/webhooks/processing/webhook.processor.ts ---
+
+--- START: src/webhooks/utils/webhook-payload.utils.ts ---
+import { PipedriveWebhookPayloadDto } from '../dtos/pipedrive-webhook.zod';
+import { PipedriveEntity, PipedriveAction } from '../dtos/pipedrive.enum';
+
+export interface ExtractedWebhookMetadata {
+    entity: PipedriveEntity | 'unknown-entity';
+    action: PipedriveAction | 'unknown-action';
+    pipedriveId: number | string;
+    rawEntity?: string;
+    rawAction?: string;
+}
+
+export function extractWebhookMetadata(payload: PipedriveWebhookPayloadDto): ExtractedWebhookMetadata {
+    const rawEntity = payload.meta?.entity;
+    const rawAction = payload.meta?.action;
+
+    const entity = Object.values(PipedriveEntity).includes(rawEntity as PipedriveEntity)
+        ? rawEntity as PipedriveEntity
+        : 'unknown-entity';
+
+    const action = Object.values(PipedriveAction).includes(rawAction as PipedriveAction)
+        ? rawAction as PipedriveAction
+        : 'unknown-action';
+
+    const pipedriveId = payload.data?.id ?? payload.meta?.id ?? 'N/A';
+
+    return {
+        entity,
+        action,
+        pipedriveId,
+        ...(entity === 'unknown-entity' && rawEntity && { rawEntity }),
+        ...(action === 'unknown-action' && rawAction && { rawAction }),
+    };
+}
+--- END: src/webhooks/utils/webhook-payload.utils.ts ---
+
+--- START: src/webhooks/webhooks.controller.ts ---
+import {
+  Controller,
+  Post,
+  Body,
+  Logger,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+
+} from '@nestjs/common';
+import { BasicAuthGuard } from '@src/auth/guards/basic-auth.guard';
+import { PipedriveWebhookPayloadDto } from './dtos/pipedrive-webhook.zod';
+import { logError } from '@src/common/utils/logger.utils';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { WEBHOOK_QUEUE_TOKEN, WebhookJobName } from '@src/common/utils/queues.types';
+import { PipedriveEntity } from './dtos/pipedrive.enum';
+import { extractWebhookMetadata } from './utils/webhook-payload.utils';
+
+@Controller('webhooks')
+export class WebhooksController {
+  private readonly logger = new Logger(WebhooksController.name);
+
+  constructor(
+    @InjectQueue(WEBHOOK_QUEUE_TOKEN) private readonly webhookQueue: Queue<PipedriveWebhookPayloadDto, any, WebhookJobName>,
+  ) { }
+
+  private getJobNameForPayload(payload: PipedriveWebhookPayloadDto): WebhookJobName {
+    const entityType = payload.meta?.entity as PipedriveEntity;
+
+    const jobNameMap = {
+      [PipedriveEntity.PERSON]: WebhookJobName.PROCESS_PERSON_WEBHOOK,
+      [PipedriveEntity.ORGANIZATION]: WebhookJobName.PROCESS_ORGANIZATION_WEBHOOK,
+      [PipedriveEntity.DEAL]: WebhookJobName.PROCESS_DEAL_WEBHOOK,
+    }
+
+    return jobNameMap[entityType] || WebhookJobName.PROCESS_UNKNOWN_WEBHOOK;
+  }
+
+  @Post('pipedrive')
+  @UseGuards(BasicAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async handlePipedriveWebhook(
+    @Body() payload: PipedriveWebhookPayloadDto,
+  ): Promise<{ status: string; jobId: string | undefined; jobName: WebhookJobName }> {
+    const { entity, action, pipedriveId, rawEntity } = extractWebhookMetadata(payload);
+
+    const jobId = `pipedrive-${entity}-${pipedriveId}-${Date.now()}`;
+    const jobName = this.getJobNameForPayload(payload);
+
+    this.logger.log(
+      `Received Pipedrive Webhook for ${rawEntity || entity} ${action} (Pipedrive ID: ${pipedriveId}). Adding job with Name: '${jobName}' and ID: '${jobId}' to BullMQ queue '${this.webhookQueue.name}'.`,
+    );
+
+    try {
+      const job = await this.webhookQueue.add(jobName, payload, { jobId });
+
+      this.logger.log(`Job added successfully: Name='${job.name}', ID='${job.id}' for Pipedrive ${rawEntity || entity} ID ${pipedriveId}.`);
+
+      return { status: 'queued', jobId: job.id, jobName: job.name as WebhookJobName };
+
+    } catch (error) {
+      logError(
+        `Error adding webhook job (Pipedrive ID: ${pipedriveId}, Job Name: ${jobName}) to BullMQ queue '${this.webhookQueue.name}'`,
+        error,
+      );
+      throw error;
+    }
+  }
+}
+--- END: src/webhooks/webhooks.controller.ts ---
+
+--- START: src/webhooks/webhooks.module.ts ---
+import { Module } from '@nestjs/common';
+import { WebhooksController } from './webhooks.controller';
+import { AuthModule } from '@src/auth/auth.module';
+import { WebhookProcessingService } from './processing/webhook-processing.service';
+import { PersonUpsertStrategy } from './processing/strategies/person-upsert.strategy';
+import { OrganizationUpsertStrategy } from './processing/strategies/organization-upsert.strategy';
+import { CustomFieldMappingModule } from './custom-fields/custom-field-mapping.module';
+import { PersonModule } from '@src/person/person.module';
+import { OrganizationModule } from '@src/organization/organization.module';
+import { DealModule } from '@src/deal/deal.module';
+import { DealUpsertStrategy } from './processing/strategies/deal-upsert.strategy';
+import { BullModule } from '@nestjs/bullmq';
+import { ConfigModule } from '@nestjs/config';
+import { WebhookProcessor } from './processing/webhook.processor';
+import { WEBHOOK_QUEUE_TOKEN } from '@src/common/utils/queues.types';
+import { SynchronizationModule } from '@src/synchronization/synchronization.module';
+import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
+
+@Module({
+  imports: [
+    AuthModule,
+    CustomFieldMappingModule,
+    PersonModule,
+    OrganizationModule,
+    DealModule,
+    ConfigModule,
+    SynchronizationModule,
+    BullModule.registerQueueAsync({
+      name: WEBHOOK_QUEUE_TOKEN,
+      useFactory: async () => ({
+        defaultJobOptions: DEFAULT_JOB_OPTIONS,
+      }),
+    }),
+  ],
+  controllers: [WebhooksController],
+  providers: [
+    WebhookProcessingService,
+    PersonUpsertStrategy,
+    OrganizationUpsertStrategy,
+    DealUpsertStrategy,
+    WebhookProcessor,
+  ],
+})
+export class WebhooksModule { }
+--- END: src/webhooks/webhooks.module.ts ---
+
+--- START: src/webhooks/dtos/pipedrive-webhook.zod.ts ---
+import { createZodDto } from 'nestjs-zod/dto';
+import { z } from 'zod';
+
+const contactDetailSchema = z
+  .object({
+    label: z.string().optional(),
+    value: z.string(),
+    primary: z.boolean().optional(),
+  })
+  .strict();
+
+const pipedrivePersonDataBaseSchema = z
+  .object({
+    id: z.number().int(),
+    name: z.string().nullable().optional(),
+    first_name: z.string().nullable().optional(),
+    last_name: z.string().nullable().optional(),
+    owner_id: z.number().int().nullable().optional(),
+    org_id: z.number().int().nullable().optional(),
+    add_time: z.string().datetime({ offset: true }).nullable().optional(),
+    update_time: z.string().datetime({ offset: true }).nullable().optional(),
+    emails: z.array(contactDetailSchema).nullable().optional(),
+    phones: z.array(contactDetailSchema).nullable().optional(),
+    label_ids: z.array(z.number().int()).nullable().optional(),
+    visible_to: z.string().nullable().optional(),
+    custom_fields: z.record(z.any()).nullable().optional(),
+  })
+  .passthrough();
+
+const pipedriveOrganizationDataBaseSchema = z
+  .object({
+    id: z.number().int(),
+    name: z.string().nullable().optional(),
+    owner_id: z.number().int().nullable().optional(),
+
+    add_time: z.string().datetime({ offset: true }).nullable().optional(),
+    update_time: z.string().datetime({ offset: true }).nullable().optional(),
+    label_ids: z.array(z.number().int()).nullable().optional(),
+    visible_to: z.string().nullable().optional(),
+    custom_fields: z.record(z.any()).nullable().optional(),
+  })
+  .passthrough();
+
+const pipedriveDealDataBaseSchema = z
+  .object({
+    id: z.number().int(),
+    title: z.string().nullable().optional(),
+    value: z.number().nullable().optional(),
+    currency: z.string().nullable().optional(),
+    user_id: z.number().int().nullable().optional(),
+    person_id: z.number().int().nullable().optional(),
+    org_id: z.number().int().nullable().optional(),
+    pipeline_id: z.number().int().nullable().optional(),
+    stage_id: z.number().int().nullable().optional(),
+    status: z.string().nullable().optional(),
+    lost_reason: z.string().nullable().optional(),
+    add_time: z.string().datetime({ offset: true }).nullable().optional(),
+    update_time: z.string().datetime({ offset: true }).nullable().optional(),
+    stage_change_time: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .optional(),
+    won_time: z.string().datetime({ offset: true }).nullable().optional(),
+    lost_time: z.string().datetime({ offset: true }).nullable().optional(),
+    close_time: z.string().datetime({ offset: true }).nullable().optional(),
+    expected_close_date: z.string().date().nullable().optional(),
+    probability: z.number().int().nullable().optional(),
+    label: z.array(z.number().int()).nullable().optional(),
+    visible_to: z.string().nullable().optional(),
+
+    activities_count: z.number().int().optional().nullable(),
+    done_activities_count: z.number().int().optional().nullable(),
+    undone_activities_count: z.number().int().optional().nullable(),
+    email_messages_count: z.number().int().optional().nullable(),
+    weighted_value: z.number().optional().nullable(),
+    weighted_value_currency: z.string().optional().nullable(),
+    origin: z.string().optional().nullable(),
+    origin_id: z.string().optional().nullable(),
+    channel_id: z.string().optional().nullable(),
+    is_archived: z.boolean().optional().nullable(),
+    archive_time: z.string().datetime({ offset: true }).optional().nullable(),
+    creator_user_id: z.number().int().optional().nullable(),
+
+    custom_fields: z.record(z.any()).nullable().optional(),
+  })
+  .passthrough();
+
+const webhookMetaSchema = z
+  .object({
+    action: z.string(),
+    entity: z.string(),
+
+    id: z.string().optional(),
+  })
+  .passthrough();
+
+const pipedriveWebhookSchema = z
+  .object({
+    meta: webhookMetaSchema,
+
+    data: z
+      .union([
+        pipedrivePersonDataBaseSchema,
+        pipedriveOrganizationDataBaseSchema,
+        pipedriveDealDataBaseSchema,
+      ])
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+export class PipedriveWebhookPayloadDto extends createZodDto(
+  pipedriveWebhookSchema,
+) {}
+
+--- END: src/webhooks/dtos/pipedrive-webhook.zod.ts ---
+
+--- START: src/webhooks/dtos/pipedrive.dto.ts ---
+export type OrganizationInput = PipedriveCommonData;
+
+export type PersonInput = {
+  emails: EmailInput[] | null;
+  first_name: string;
+  last_name: string;
+  org_id: number | null;
+  phones: PhoneInput[] | null;
+} & PipedriveCommonData;
+
+type PipedriveCommonData = {
+  add_time: string;
+  id: number;
+  label_ids: number[] | null;
+  name: string;
+  owner_id: number | null;
+  visible_to: string | null;
+  update_time: string;
+  custom_fields: Record<string, any> | null;
+};
+
+export type DealInput = {
+  title: string | null;
+  value: number | null;
+  currency: string | null;
+  owner_id: number | null;
+  person_id: number | null;
+  org_id: number | null;
+  stage_id: number | null;
+  status: string | null;
+  lost_reason: string | null;
+  expected_close_date: string | null;
+  probability: number | null;
+  pipeline_id: number | null;
+  won_time: string | null;
+  lost_time: string | null;
+  close_time: string | null;
+  stage_change_time: string | null;
+  next_activity_date: string | null;
+  last_activity_date: string | null;
+  activities_count?: number | null;
+  done_activities_count?: number | null;
+  undone_activities_count?: number | null;
+  email_messages_count?: number | null;
+  weighted_value?: number | null;
+  weighted_value_currency?: string | null;
+  origin?: string | null;
+  origin_id?: string | null;
+  channel_id?: string | null;
+  is_archived?: boolean | null;
+  archive_time?: string | null;
+  creator_user_id?: number | null;
+} & PipedriveCommonData;
+
+export type EmailInput = {
+  label: string;
+  value: string;
+  primary: boolean;
+};
+
+export type PhoneInput = {
+  label: string;
+  value: string;
+  primary: boolean;
+};
+
+--- END: src/webhooks/dtos/pipedrive.dto.ts ---
+
+--- START: src/webhooks/dtos/pipedrive.enum.ts ---
+export enum PipedriveEntity {
+  PERSON = 'person',
+  ORGANIZATION = 'organization',
+  DEAL = 'deal',
+}
+
+export enum PipedriveAction {
+  CREATE = 'create',
+  CHANGE = 'change',
+  DELETE = 'delete',
+}
+--- END: src/webhooks/dtos/pipedrive.enum.ts ---
+
+--- START: src/webhooks/custom-fields/custom-field-mapping.service.ts ---
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+
+type FieldMapInfo = { prismaField: string; type: string };
+type EntityMapping = Record<string, FieldMapInfo>;
+
+@Injectable()
+export class CustomFieldMappingService implements OnModuleInit {
+  private readonly logger = new Logger(CustomFieldMappingService.name);
+  private personFieldMapping: EntityMapping = {};
+  private orgFieldMapping: EntityMapping = {};
+  private dealFieldMapping: EntityMapping = {};
+
+  constructor() {}
+
+  onModuleInit() {
+    this.loadStaticMappings();
+    this.logger.log('Custom field mappings loaded.');
+  }
+
+  private loadStaticMappings() {
+    this.personFieldMapping = {
+      birthday: { prismaField: 'birthday', type: 'date' },
+      postal_address: { prismaField: 'postal_address', type: 'address' },
+      '11899fe33f11eeb1c0910c955a75fab00a5eb536': {
+        prismaField: 'is_returning',
+        type: 'varchar',
+      },
+      '5875c94fcbf479ad6944419a72d15b6792293847': {
+        prismaField: 'origem',
+        type: 'varchar',
+      },
+      notes: { prismaField: 'notes', type: 'text' },
+      // im: { prismaField: 'im', type: 'varchar' },
+      '1b22f3bbf94ee509da6a53dab6edf1996981a91b': {
+        prismaField: 'link_guru',
+        type: 'varchar',
+      },
+      '7446ad07756023c3fa623c13344118974ddf4279': {
+        prismaField: 'id_huggy',
+        type: 'varchar',
+      },
+      f182f998c5057b34f72fdc5c4adc4ff4dc1b81b0: {
+        prismaField: 'agente_familia_responsavel',
+        type: 'set',
+      },
+      '5e2ec3fc21b520dc0a6dd21babba3cbcb8222d06': {
+        prismaField: 'transcricao_de_casamento',
+        type: 'varchar',
+      },
+      '96b09daabe77cd8b55d3cbabd9d902b900aea3ab': {
+        prismaField: 'motivo_de_entrada_na_loja',
+        type: 'set',
+      },
+      '083da88b57017b14c25ce49db6ebf6cff4838b8c': {
+        prismaField: 'numero_de_assento',
+        type: 'varchar',
+      },
+      '71a481520961ecf730b051231f8f4f6549b441ec': {
+        prismaField: 'infos_alinhamento',
+        type: 'text',
+      },
+      job_title: { prismaField: 'job_title', type: 'varchar' },
+    };
+
+    this.orgFieldMapping = {
+      address: { prismaField: 'address', type: 'address' },
+      '24a7dc93f166a0b32d0f9d8a8c97b75ab316b7a5': {
+        prismaField: 'pt_status',
+        type: 'varchar',
+      },
+      b564701815de30dc3b1bd175dfa3fd1953bbe834: {
+        prismaField: 'pt_tipo_de_processo',
+        type: 'varchar',
+      },
+      '9aeb273879deff7c320c463a0f89a0830fa2d91d': {
+        prismaField: 'pt_requerente',
+        type: 'varchar',
+      },
+      ceeab9fbabcdb8482500cc527a1a10dbddf1349d: {
+        prismaField: 'pt_local_de_envio',
+        type: 'varchar',
+      },
+      '87eece434f1a3ef06004d89c024d5024d990c0a4': {
+        prismaField: 'pt_dia_do_envio',
+        type: 'date',
+      },
+      d7f10d5bfb0dfe07b7c6265d3a5f2cc30b946331: {
+        prismaField: 'pt_senha',
+        type: 'varchar',
+      },
+      be9a4c24235319010196b9daf5fc916ddb0eef7f: {
+        prismaField: 'pt_data_da_trava',
+        type: 'date',
+      },
+      '0c95a278d80dc679b057d24d1fba48c647c40f80': {
+        prismaField: 'pt_link_sobre_trava',
+        type: 'varchar',
+      },
+      '99905914a61afc3555bbdaf5d2272ad4a7a5500a': {
+        prismaField: 'it_dashboard_do_cliente',
+        type: 'varchar',
+      },
+      '6d255f2790a135c810d5604082776f836fa4d843': {
+        prismaField: 'pt_status_portugues',
+        type: 'enum',
+      },
+      dc598be29ce761ea8336a6836b559a89daabbd7c: {
+        prismaField: 'pt_acesso_a_central',
+        type: 'enum',
+      },
+      dad832746facd158da83a1b7f6ab486610873f4f: {
+        prismaField: 'pt_atr_em_andamento',
+        type: 'varchar',
+      },
+      '102422eb33fd58a5da39d89a17c009c0cb51024d': {
+        prismaField: 'pt_tag_sensibilidade',
+        type: 'enum',
+      },
+    };
+
+    this.dealFieldMapping = {
+      // Hash Key from Pipedrive : { prismaField: 'your_prisma_field_name', type: 'pipedrive_field_type' }
+      '00c27645ca220b30c64ced9c3398ea83942851f6': {
+        prismaField: 'tipos_de_processos',
+        type: 'enum',
+      }, // Tipos de Processos
+      '96dcd4a2a2123a074c7c7d141fd17d00fd62fe8e': {
+        prismaField: 'link_proposta',
+        type: 'varchar',
+      }, // Link proposta
+      '2046bb1cb61a34cff93eac97965dfe0077eee017': {
+        prismaField: 'link_pre_busca_it',
+        type: 'varchar',
+      }, // Link pré-busca IT
+      b98c22b6466e08e95eb621a588c8ef4a198bcabe: {
+        prismaField: 'resultado_pre_busca',
+        type: 'enum',
+      }, // Resultado pré-busca
+      f4d367d9bc16187215377eff69acf3e9334124af: {
+        prismaField: 'link_pre_busca_br',
+        type: 'varchar',
+      }, // Link pré-busca BR
+      d4b275856e681ca3892799cff08254def06b12db: {
+        prismaField: 'link_guru',
+        type: 'varchar',
+      }, // Link do GURU
+      a66092badb6b87c18c65487719a8a5d464455d9d: {
+        prismaField: 'type_parente_portugues',
+        type: 'enum',
+      }, // [Type] Parente português
+      '8b6bb81b6241ed46eba3d3dd138326a2d2a9618c': {
+        prismaField: 'type_docs_portugues',
+        type: 'enum',
+      }, // [Type] Docs portugues
+      '106ebca3a9643cfbf0abd8f2071fda0116bd5b11': {
+        prismaField: 'type_outros_familiares',
+        type: 'enum',
+      }, // [Type] Outros familiares?
+      '6af323a3c60ba6a4d0709d65ee9b0830c319ee78': {
+        prismaField: 'type_visitou_portugal',
+        type: 'enum',
+      }, // [Type] Visitou Portugal?
+      '0b4cbe2f290ed20958f8755288343c4b8340b0fe': {
+        prismaField: 'type_objetivo',
+        type: 'enum',
+      }, // [Type] Objetivo
+      f033b1803d77f942fb44d928e21be2fe885ee7d0: {
+        prismaField: 'loja_sdr',
+        type: 'varchar',
+      }, // Loja - SDR
+      '3f02bbd18f37f216687b2007f1e6254d4bfe1a92': {
+        prismaField: 'loja_inside',
+        type: 'varchar',
+      }, // Loja - Inside
+      '14991a9aa74392fed21b5420c9bc743cf10c909c': {
+        prismaField: 'sdr_passagem_sdr',
+        type: 'enum',
+      }, // [SDR] Passagem SDR
+      c642efe3eca46528668f2d4f97986a2bed23b88d: {
+        prismaField: 'sdr_data_passagem',
+        type: 'date',
+      }, // [SDR] Data passagem
+      '2ccf1731fb6091da7023341b7d53d304d4f02780': {
+        prismaField: 'sdr_quem_passou_id',
+        type: 'user',
+      }, // [SDR} Quem?
+      d0f3c33d7735b19a1b0047ad7a65672d01479a83: {
+        prismaField: 'sdr_original_id',
+        type: 'user',
+      }, // [SDR] Original
+      '5d076eabe09fb6acf53066983aef5f4635656cf7': {
+        prismaField: 'tipo_de_venda',
+        type: 'enum',
+      }, // Tipo de venda
+      ca1c3665fe34cbe3bfba2f495c5b2909015ce2dd: {
+        prismaField: 'data_retorno',
+        type: 'date',
+      }, // Data retorno
+      '5aa0a96b68114ccc0fa96b51bb5bf35437ecb295': {
+        prismaField: 'valor_total_processo_automacao',
+        type: 'varchar',
+      }, // Valor Total Processo (automacao):
+      '0225c93e607f9cfe3dc9881e99436287191b213d': {
+        prismaField: 'forma_pagamento_automacao',
+        type: 'text',
+      }, // Forma de pagamento (automacao):
+      '13f4288b53d43763147706ece90225b98f8b6b3b': {
+        prismaField: 'processos_fechados_automacao',
+        type: 'text',
+      }, // Processos fechados (automacao)
+      f1dc44ba9745dc20638cba49cb20fd5dbb993a60: {
+        prismaField: 'infos_pt_automacao',
+        type: 'text',
+      }, // Infos do PT (automacao)
+      '7f57afe5ac32d7c6e52636c84ebc6d670e256051': {
+        prismaField: 'tipo_certidao_pt_automacao',
+        type: 'varchar',
+      }, // Tipo de Certidao PT (automacao)
+      c0efad0e6e314baa3c479a25c5fd6ed9a614af30: {
+        prismaField: 'versao_precificacao_automacao',
+        type: 'varchar',
+      }, // Versão Precificação (automacao)
+      e6f26faad4b12ca071d67b122ed8e5f9ef1109fa: {
+        prismaField: 'indicacao',
+        type: 'varchar',
+      }, // ***Indicação:
+      '1a824b7605bf2984745f58617383dceabc712e87': {
+        prismaField: 'certidao_portugues',
+        type: 'varchar',
+      }, // Certidao portugues?
+      '66807f6c7a2b0dc25d2f769384de452821c58156': {
+        prismaField: 'cf_nome',
+        type: 'varchar',
+      }, // Nome (Custom Field)
+      '85f949ec25d99f37d095f691812096d62b7a9929': {
+        prismaField: 'cf_telefone',
+        type: 'varchar',
+      }, // Telefone (Custom Field)
+      '0ad921abd2779eb18b3aa47b8f29408276f73370': {
+        prismaField: 'numero_assento',
+        type: 'varchar',
+      }, // Número de Assento:
+      e4c23208d8a1eba993b00b77d131d1c7609f26bd: {
+        prismaField: 'numero_processo_portugal',
+        type: 'varchar',
+      }, // Número do Processo (em portugal):
+      '9256b516f1583c10b1625e41228bcd94f1d157e9': {
+        prismaField: 'sao_menores_idade',
+        type: 'varchar',
+      }, // Eles são menores de idade?
+      '5a15fb2208adf252664c3dc72632e8113fbfad40': {
+        prismaField: 'nome_completo_portugues',
+        type: 'varchar',
+      }, // Nome completo do português
+      f2765ceda9929095f7d7e3d0a8eef32906af99c2: {
+        prismaField: 'nome_completo_mae_portugues',
+        type: 'varchar',
+      }, // Nome completo mãe do português
+      '42dfff63a66f206dc1255ae1ed0249bf0d890278': {
+        prismaField: 'nome_completo_pai_portugues',
+        type: 'varchar',
+      }, // Nome completo pai do português
+      '1b48577c581834856de6f6e8cd83d76a8f0c9a99': {
+        prismaField: 'concelho_nascimento_portuga',
+        type: 'varchar',
+      }, // Concelho de nascimento do portuga:
+      '79087f5020e4ef4ab75115296edc4eabf1eb6ea7': {
+        prismaField: 'numero_rastreamento',
+        type: 'varchar',
+      }, // Número de Rastreamento
+      '447a7b6e9d0ac22522d62b422fc0f70a606c1b2e': {
+        prismaField: 'valor_certidao',
+        type: 'varchar',
+      }, // Valor da Certidão
+      '50b301604dafef2da77e340f07b4bce511819c4b': {
+        prismaField: 'nome_completo_contratante',
+        type: 'varchar',
+      }, // Nome Completo do contratante
+      fc11c663e3cae0418b548be6c33b9e44ce73f052: {
+        prismaField: 'cpf_contratante',
+        type: 'varchar',
+      }, // CPF do contratante - new
+      '289cdb6ae555549c335454a2d9ea919cadeaa7b1': {
+        prismaField: 'rg_contratante',
+        type: 'varchar',
+      }, // RG do contratante - new
+      a6531fd1c6484ac66e98354baf5d0c4719945551: {
+        prismaField: 'orgao_emissor_rg_contratante',
+        type: 'varchar',
+      }, // Órgão emissor RG contratante
+      '074c56cf475f329eadb8db2fb0fbaa9100f3056d': {
+        prismaField: 'data_emissao_rg_contratante',
+        type: 'varchar',
+      }, // Data emissão RG contratante (keeping varchar type as per Pipedrive definition)
+      '9fc26717dbbb55cd9d47fa471e592d042ec30c93': {
+        prismaField: 'cep_contratante',
+        type: 'varchar',
+      }, // CEP do contratante - new
+      '273f3f48de3160b20c2d065caf002ad9bce7f41b': {
+        prismaField: 'endereco_contratante',
+        type: 'varchar',
+      }, // Endereço do contratante
+      '2e1b4dc94298d6f37a09b3b4fddea88210cbad0a': {
+        prismaField: 'assento_ascendente_portuga',
+        type: 'varchar',
+      }, // Assento do ascendente portuga
+      '947d79b0f97b623b6bde9584004353c662839b95': {
+        prismaField: 'possui_plano_familia',
+        type: 'varchar',
+      }, // Possui Plano Família?
+      '04e00dfec75a8c52b8bf9cec8542495f253882e6': {
+        prismaField: 'codigo_produto',
+        type: 'text',
+      }, // Código Produto
+      '723f48022e7f8244a13f218a29e25439b656afec': {
+        prismaField: 'docs_emission',
+        type: 'varchar',
+      }, // docs_emission:
+      db7c09528b0af347c35abb38841beea34e0f98af: {
+        prismaField: 'processos_fechados_mika_automacao',
+        type: 'text',
+      }, // Processos fechados descrevendo valores para mika (automacao)
+      '48c263738d7a844d9322a63fff2bffeb7427b1a0': {
+        prismaField: 'docs_anexados_produto',
+        type: 'text',
+      }, // Docs anexados no Produto
+      '4f00f38d610922a8f819be52547a76ff3857f2af': {
+        prismaField: 'parente_italiano',
+        type: 'enum',
+      }, // Parente Italiano
+      dd6227ae2eaffd46fda68845dad5f0604bd0b664: {
+        prismaField: 'local_nascimento_italiano',
+        type: 'enum',
+      }, // Local de nascimento italiano
+      '7737de3d4c4467f2aab42a19642dac3441486c83': {
+        prismaField: 'compromisso_inicial',
+        type: 'enum',
+      }, // Compromisso inicial
+      eabe0d80fc60ddfce6057b6d11552055f4a896f5: {
+        prismaField: 'vendedor_original',
+        type: 'varchar',
+      }, // Vendedor original
+      '443a3c4b7de2031d34fff1b739f8b85ffd1dce51': {
+        prismaField: 'docs_italiano',
+        type: 'enum',
+      }, // Docs italiano
+      '9d2fe61da1a56b6451398195297581386593714c': {
+        prismaField: 'data_recebido',
+        type: 'date',
+      }, // Data recebido
+      f66bf97255433c72fb4841918079408ab70f058f: {
+        prismaField: 'historico_proprietario',
+        type: 'text',
+      }, // Histórico proprietário
+      cf4c6ac903141a61de4d50c811952fdda72f6b06: {
+        prismaField: 'status_negocio_andamento',
+        type: 'enum',
+      }, // Status do negócio em andamento
+      '8a8199a552c16f60bad07b295fc6d14d270899ec': {
+        prismaField: 'sdr_passagem_resposta',
+        type: 'enum',
+      }, // [SDR] Passagem resposta
+      b6256c2b4b8f0de04a006a8210627169756aadbe: {
+        prismaField: 'it_chatbot',
+        type: 'varchar',
+      }, // [IT]chatbot
+      '0606a7728b4c4f86161fa2702f2f8643a2745242': {
+        prismaField: 'it_teste_chatbot',
+        type: 'varchar',
+      }, // [IT]teste chatbot
+      '9b0254d7aef2e07d60b47645816c7554be6df94b': {
+        prismaField: 'gclid',
+        type: 'text',
+      }, // gclid
+      '5604f7961dc547cea36ee43aff9f110288b939c6': {
+        prismaField: 'sdr_intermediario_id',
+        type: 'user',
+      }, // [SDR] Intermediário
+      '6994cecac7cdfa8d621fc2d234fc16d9d731a6b5': {
+        prismaField: 'it_chatbot_modelo_msg_inicial',
+        type: 'varchar',
+      }, // [IT] chatbot modelo msg inicial
+      a0fe3ab944abd97531bef59d72a0b4a4f61a90f5: {
+        prismaField: 'status_reuniao_chatbot',
+        type: 'enum',
+      }, // Status reunião (link enviado por chatbot)
+      '0d0a601c7f5b749a3912725ea9efcf46c0795761': {
+        prismaField: 'criador_shopping_id',
+        type: 'user',
+      }, // Criador shopping
+      a0cb6f53975e51c6664f13ab5a85cb7a97b5f2d8: {
+        prismaField: 'resultado_roleta',
+        type: 'varchar',
+      }, // Resultado Roleta
+      a48c31b5085ba5553ea2b7f3dafdb13c2175362d: {
+        prismaField: 'resultado_roleta_manual',
+        type: 'enum',
+      }, // Resultado Roleta - Manual
+      '3990246de9f44cb1ee2871160ad1fb36f972414b': {
+        prismaField: 'data_alocacao',
+        type: 'date',
+      }, // Data Alocação
+    };
+  }
+
+  getMappingFor(entityType: 'person' | 'organization' | 'deal'): EntityMapping {
+    switch (entityType) {
+      case 'person':
+        return this.personFieldMapping;
+      case 'organization':
+        return this.orgFieldMapping;
+      case 'deal':
+        return this.dealFieldMapping;
+      default:
+        return {};
+    }
+  }
+}
+
+--- END: src/webhooks/custom-fields/custom-field-mapping.service.ts ---
+
+--- START: src/webhooks/custom-fields/custom-field-mapping.helper.ts ---
+import { Injectable, Logger, } from "@nestjs/common";
+import { CustomFieldMappingService } from "./custom-field-mapping.service";
+import { parseDate, safeParseFloat, safeParseInt } from "@src/common/mapping/utils/mapping.utils";
+
+@Injectable()
+export class CustomFieldMapperHelper {
+  private readonly logger = new Logger(CustomFieldMapperHelper.name);
+
+  constructor(private readonly mappingService: CustomFieldMappingService) { }
+
+  mapCustomFieldsToInput<T extends Record<string, any>>(
+    entityType: 'person' | 'organization' | 'deal',
+    customFieldsData: Record<string, any> | null | undefined
+  ): Partial<T> {
+    const mappedFields: Partial<T> = {};
+    if (!customFieldsData) return mappedFields;
+
+    const mapping = this.mappingService.getMappingFor(entityType);
+
+    for (const [pipedriveKey, value] of Object.entries(customFieldsData)) {
+      const mapInfo = mapping[pipedriveKey];
+      if (mapInfo) {
+        const { prismaField, type } = mapInfo;
+        const preparedValue = this.prepareValueBasedOnType(value, type, prismaField);
+
+        (mappedFields as Record<string, any>)[prismaField] = preparedValue;
+      } else {
+        if(pipedriveKey === "im") continue;
+        this.logger.debug(`No mapping found for ${entityType} custom field hash: ${pipedriveKey}`);
+      }
+    }
+    return mappedFields;
+  }
+
+  private prepareValueBasedOnType(value: any, type: string, fieldName: string): unknown {
+    if (value === null || value === undefined) return null;
+
+    switch (type) {
+      case 'date':
+      case 'datetime':
+      case 'time':
+        return parseDate(value as string);
+      case 'int':
+      case 'user':
+      case 'stage':
+      case 'pipeline':
+        return safeParseInt(value);
+      case 'double':
+      case 'monetary':
+        return safeParseFloat(value);
+      case 'enum':
+      case 'set':
+      case 'visible_to':
+        if (typeof value === 'object' && value !== null && 'id' in value) {
+          return String((value as { id: number | string }).id);
+        } else if (Array.isArray(value)) {
+          return value.map(item => String(item?.id ?? item)).join(',');
+        }
+        return String(value);
+      case 'address':
+        return typeof value === 'object' && value !== null
+          ? (value as any).formatted_address || JSON.stringify(value)
+          : String(value);
+      case 'text':
+      case 'varchar':
+        return String(value);
+      default:
+        return String(value);
+    }
+  }
+}
+
+--- END: src/webhooks/custom-fields/custom-field-mapping.helper.ts ---
+
+--- START: src/webhooks/custom-fields/custom-field-mapping.module.ts ---
+import { Module, Global } from '@nestjs/common';
+import { CustomFieldMappingService } from './custom-field-mapping.service';
+import { CustomFieldMapperHelper } from './custom-field-mapping.helper';
+
+@Global()
+@Module({
+  providers: [CustomFieldMappingService, CustomFieldMapperHelper],
+  exports: [CustomFieldMappingService, CustomFieldMapperHelper],
+})
+export class CustomFieldMappingModule {}
+
+--- END: src/webhooks/custom-fields/custom-field-mapping.module.ts ---
