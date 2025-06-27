@@ -41,12 +41,13 @@ export class RelatedEntityEnsureService {
     }
 
     const repository = this.getRepository(entityType);
-
+    let entityExists: { id: number; sync_status: string } | null = null;
     try {
-      const entityExists = (await repository.findById(entityId)) as {
+      entityExists = (await repository.findById(entityId)) as {
         id: number;
+        sync_status: string;
       };
-      if (entityExists) {
+      if (entityExists && entityExists?.sync_status !== 'placeholder') {
         this.logger.debug(
           `Entity ${entityType} ID ${entityId} already exists. No action needed.`,
         );
@@ -62,7 +63,7 @@ export class RelatedEntityEnsureService {
       `Entity ${entityType} ID ${entityId} not found. Creating placeholder and queueing for sync.`,
     );
     try {
-      await repository.createPlaceholder({ id: entityId });
+      if (!entityExists) await repository.createPlaceholder({ id: entityId });
       const jobName = this.getJobName(entityType);
       await this.entitySyncQueue.add(
         jobName,

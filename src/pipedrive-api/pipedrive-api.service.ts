@@ -3,18 +3,27 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { logError } from '@src/common/utils/logger.utils';
 import { EnvSchema } from '@src/config/env.schema';
+import {
+  OrganizationInput,
+  PersonInput,
+} from '@src/webhooks/dtos/pipedrive.dto';
 import { firstValueFrom } from 'rxjs';
 
 type PipedriveField = {
   key: string;
   name: string;
-  field_type: 'enum' | 'set' | 'varchar';
+  field_type: 'enum' | 'set';
   options?: { id: number; label: string }[];
 };
 
 type PipedriveFieldResponse = {
   success: boolean;
   data: PipedriveField[] | null;
+};
+
+type PipedriveSingleEntityResponse<T> = {
+  success: boolean;
+  data: T | null;
 };
 
 @Injectable()
@@ -38,7 +47,7 @@ export class PipedriveApiService {
   async getAllFields(
     entityType: 'deal' | 'person' | 'organization',
   ): Promise<PipedriveField[]> {
-    const url = `${this.baseUrl}/${entityType}Fields?api_token=${this.apiToken}`;
+    const url = `${this.baseUrl}/v1/${entityType}Fields?api_token=${this.apiToken}`;
     this.logger.log(`Fetching all fields for entity type: ${entityType}`);
 
     try {
@@ -60,6 +69,40 @@ export class PipedriveApiService {
     } catch (error) {
       logError(`Failed to fetch fields for ${entityType}.`, error);
       return [];
+    }
+  }
+
+  async getPersonById(id: number): Promise<PersonInput | null> {
+    return this.getEntityById<PersonInput>('person', id);
+  }
+
+  async getOrganizationById(id: number): Promise<OrganizationInput | null> {
+    return this.getEntityById<OrganizationInput>('organization', id);
+  }
+
+  private async getEntityById<T>(
+    entityType: 'person' | 'organization',
+    id: number,
+  ): Promise<T | null> {
+    const url = `${this.baseUrl}/v2/${entityType}s/${id}?api_token=${this.apiToken}`;
+    this.logger.log(`Fetching ${entityType} with ID: ${id}`);
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<PipedriveSingleEntityResponse<T>>(url),
+      );
+
+      if (response.data?.success && response.data.data) {
+        this.logger.log(`Successfully fetched ${entityType} ID ${id}.`);
+        return response.data.data;
+      }
+
+      this.logger.warn(
+        `Could not find ${entityType} with ID ${id} in Pipedrive. Response: ${JSON.stringify(response.data)}`,
+      );
+      return null;
+    } catch (error) {
+      logError(`Failed to fetch ${entityType} with ID ${id}.`, error);
+      return null;
     }
   }
 }

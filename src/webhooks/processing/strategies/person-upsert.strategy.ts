@@ -46,6 +46,9 @@ export class PersonUpsertStrategy extends BaseUpsertStrategy<
       throw error;
     }
 
-    return super.upsert(data);
+    return super.upsert({
+      ...data,
+      ...(data.visible_to ? { visible_to: String(data.visible_to) } : {}),
+    });
   }
 }
