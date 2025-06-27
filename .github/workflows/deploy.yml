@@ -81,6 +81,8 @@ jobs:
           export TRAEFIK_AUTH_USER_PASS="${{ secrets.TRAEFIK_AUTH_USER_PASS }}"
           export PIPEDRIVE_WEBHOOK_USER="${{ secrets.PIPEDRIVE_WEBHOOK_USER }}"
           export PIPEDRIVE_WEBHOOK_PASSWORD="${{ secrets.PIPEDRIVE_WEBHOOK_PASSWORD }}"
+          export PIPEDRIVE_API_TOKEN="${{ secrets.PIPEDRIVE_API_TOKEN }}"
+          export PIPEDRIVE_API_URL="${{ secrets.PIPEDRIVE_API_URL }}"
           export REDIS_URL="${{ secrets.REDIS_URL }}"
 
           # --- Run Prisma Migrate Deploy ---
