@@ -91,7 +91,7 @@ export class DealMapper
       emailMessagesCount: data.email_messages_count,
       value: data.value,
       currency: data.currency,
-      expectedCloseDate: data.expected_close_date,
+      expectedCloseDate: this.parseDate(data.expected_close_date),
       probability: data.probability,
       labelIds: data.label_ids?.join(','),
       weightedValue: data.weighted_value,
@@ -102,5 +102,10 @@ export class DealMapper
       isArchived: data.is_archived,
       archiveTime: data.archive_time,
     };
+  }
+
+  private parseDate(dateString: string | null | undefined): string | null {
+    if (!dateString) return null;
+    return new Date(dateString).toISOString();
   }
 }
