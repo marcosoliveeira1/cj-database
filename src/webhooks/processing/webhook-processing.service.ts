@@ -10,6 +10,8 @@ import {
 import { logError } from '@src/common/utils/logger.utils';
 import { PersonUpsertStrategy } from './strategies/person-upsert.strategy';
 import { DealUpsertStrategy } from './strategies/deal-upsert.strategy';
+import { PipelineUpsertStrategy } from './strategies/pipeline-upsert.strategy';
+import { StageUpsertStrategy } from './strategies/stage-upsert.strategy';
 import { extractWebhookMetadata } from '../utils/webhook-payload.utils';
 
 @Injectable()
@@ -23,11 +25,15 @@ export class WebhookProcessingService {
     private readonly orgStrategy: OrganizationUpsertStrategy,
     private readonly personStrategy: PersonUpsertStrategy,
     private readonly dealStrategy: DealUpsertStrategy,
+    private readonly pipelineStrategy: PipelineUpsertStrategy,
+    private readonly stageStrategy: StageUpsertStrategy,
   ) {
     this.strategyMap = {
       [PipedriveEntity.ORGANIZATION]: this.orgStrategy,
       [PipedriveEntity.PERSON]: this.personStrategy,
       [PipedriveEntity.DEAL]: this.dealStrategy,
+      [PipedriveEntity.PIPELINE]: this.pipelineStrategy,
+      [PipedriveEntity.STAGE]: this.stageStrategy,
     };
   }
 

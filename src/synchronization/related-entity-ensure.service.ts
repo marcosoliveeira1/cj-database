@@ -4,6 +4,8 @@ import { Queue } from 'bullmq';
 import { Prisma } from '@prismaClient';
 import { IOrganizationRepository } from '@src/organization/interfaces/organization-repository.interface';
 import { IPersonRepository } from '@src/person/interfaces/person-repository.interface';
+import { IPipelineRepository } from '@src/pipeline/interfaces/pipeline-repository.interface';
+import { IStageRepository } from '@src/stage/interfaces/stage-repository.interface';
 import {
   EntitySyncJobName,
   EntitySyncJobPayload,
@@ -21,6 +23,10 @@ export class RelatedEntityEnsureService {
     private readonly orgRepository: IOrganizationRepository,
     @Inject(IPersonRepository)
     private readonly personRepository: IPersonRepository,
+    @Inject(IPipelineRepository)
+    private readonly pipelineRepository: IPipelineRepository,
+    @Inject(IStageRepository)
+    private readonly stageRepository: IStageRepository,
     @InjectQueue(ENTITY_SYNC_QUEUE_TOKEN)
     private readonly entitySyncQueue: Queue<
       EntitySyncJobPayload,
@@ -99,6 +105,10 @@ export class RelatedEntityEnsureService {
       return this.orgRepository;
     } else if (entityType === 'person') {
       return this.personRepository;
+    } else if (entityType === 'pipeline') {
+      return this.pipelineRepository;
+    } else if (entityType === 'stage') {
+      return this.stageRepository;
     }
     throw new Error(
       `Invalid managed entity type for repository: ${entityType as string}`,
@@ -110,6 +120,10 @@ export class RelatedEntityEnsureService {
       return EntitySyncJobName.SYNC_ORGANIZATION;
     } else if (entityType === 'person') {
       return EntitySyncJobName.SYNC_PERSON;
+    } else if (entityType === 'pipeline') {
+      return EntitySyncJobName.SYNC_PIPELINE;
+    } else if (entityType === 'stage') {
+      return EntitySyncJobName.SYNC_STAGE;
     }
     throw new Error(
       `Invalid managed entity type for job name: ${entityType as string}`,

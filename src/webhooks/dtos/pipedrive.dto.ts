@@ -63,3 +63,27 @@ export type PhoneInput = {
   value: string;
   primary: boolean;
 };
+
+export type PipelineInput = {
+  id: number;
+  name: string;
+  url_title: string;
+  order_nr: number;
+  active_flag: boolean;
+  deal_probability: boolean;
+  add_time: string;
+  update_time: string;
+};
+
+export type StageInput = {
+  id: number;
+  name: string;
+  order_nr: number;
+  pipeline_id: number;
+  active_flag: boolean;
+  deal_probability: number;
+  rotten_flag: boolean;
+  rotten_days: number | null;
+  add_time: string;
+  update_time: string;
+};

@@ -15,7 +15,7 @@ model Deal {
   title                 String?   @map("title")
   creatorUserId         Int?      @map("creator_user_id")
   ownerId               Int?      @map("owner_id")
-  pipelineId            Int?      @map("pipeline")
+  pipelineId            Int?      @map("pipeline_id")
   stageId               Int?      @map("stage_id")
   status                String?   @map("status")
   pipedriveAddTime      DateTime? @map("add_time")
@@ -251,4 +251,43 @@ model PersonPhone {
   @@index([personId])
   @@index([value])
   @@map("person_phones")
+}
+
+model Pipeline {
+  id                Int       @id @map("id")
+  name              String?
+  urlTitle          String?   @map("url_title")
+  orderNr           Int?      @map("order_nr")
+  activeFlag        Boolean?  @map("active_flag")
+  dealProbability   Boolean?  @map("deal_probability")
+  pipedriveAddTime  DateTime? @map("add_time")
+  pipedriveUpdateTime DateTime? @map("update_time")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sync_status String? @default("synced")
+
+  @@map("pipelines")
+}
+
+model Stage {
+  id                Int       @id @map("id")
+  name              String?
+  orderNr           Int?      @map("order_nr")
+  activeFlag        Boolean?  @map("active_flag")
+  dealProbability   Int?      @map("deal_probability")
+  rottenFlag        Boolean?  @map("rotten_flag")
+  rottenDays        Int?      @map("rotten_days")
+  pipedriveAddTime  DateTime? @map("add_time")
+  pipedriveUpdateTime DateTime? @map("update_time")
+
+  pipelineId Int? @map("pipeline_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sync_status String? @default("synced")
+
+  @@map("stages")
 }

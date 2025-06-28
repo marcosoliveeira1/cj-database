@@ -15,6 +15,10 @@ import { WebhookProcessor } from './processing/webhook.processor';
 import { WEBHOOK_QUEUE_TOKEN } from '@src/common/utils/queues.types';
 import { SynchronizationModule } from '@src/synchronization/synchronization.module';
 import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
+import { PipelineModule } from '@src/pipeline/pipeline.module';
+import { StageModule } from '@src/stage/stage.module';
+import { PipelineUpsertStrategy } from './processing/strategies/pipeline-upsert.strategy';
+import { StageUpsertStrategy } from './processing/strategies/stage-upsert.strategy';
 
 @Module({
   imports: [
@@ -23,6 +27,8 @@ import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
     PersonModule,
     OrganizationModule,
     DealModule,
+    PipelineModule,
+    StageModule,
     ConfigModule,
     SynchronizationModule,
     BullModule.registerQueueAsync({
@@ -39,6 +45,8 @@ import { DEFAULT_JOB_OPTIONS } from '@src/common/utils/queues.config';
     OrganizationUpsertStrategy,
     DealUpsertStrategy,
     WebhookProcessor,
+    PipelineUpsertStrategy,
+    StageUpsertStrategy,
   ],
 })
 export class WebhooksModule {}

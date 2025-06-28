@@ -41,6 +41,8 @@ export class WebhookProcessor extends WorkerHost {
         case WebhookJobName.PROCESS_PERSON_WEBHOOK:
         case WebhookJobName.PROCESS_ORGANIZATION_WEBHOOK:
         case WebhookJobName.PROCESS_DEAL_WEBHOOK:
+        case WebhookJobName.PROCESS_PIPELINE_WEBHOOK:
+        case WebhookJobName.PROCESS_STAGE_WEBHOOK:
           this.logger.debug(
             `Job ${jobId} (Name: ${jobName}) is a known Pipedrive entity webhook. Delegating to WebhookProcessingService.`,
           );

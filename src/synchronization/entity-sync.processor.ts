@@ -10,14 +10,22 @@ import {
 import { PipedriveApiService } from '@src/pipedrive-api/pipedrive-api.service';
 import { PersonUpsertStrategy } from '@src/webhooks/processing/strategies/person-upsert.strategy';
 import { OrganizationUpsertStrategy } from '@src/webhooks/processing/strategies/organization-upsert.strategy';
+import { PipelineUpsertStrategy } from '@src/webhooks/processing/strategies/pipeline-upsert.strategy';
+import { StageUpsertStrategy } from '@src/webhooks/processing/strategies/stage-upsert.strategy';
 import { IUpsertStrategy } from '@src/webhooks/processing/strategies/base-upsert.strategy';
 import {
   OrganizationInput,
   PersonInput,
+  PipelineInput,
+  StageInput,
 } from '@src/webhooks/dtos/pipedrive.dto';
 
 type SyncHandler = {
-  fetch: (id: number) => Promise<PersonInput | OrganizationInput | null>;
+  fetch: (
+    id: number,
+  ) => Promise<
+    PersonInput | OrganizationInput | PipelineInput | StageInput | null
+  >;
   upsert: IUpsertStrategy;
 };
 
@@ -30,6 +38,8 @@ export class EntitySyncProcessor extends WorkerHost {
     private readonly pipedriveApi: PipedriveApiService,
     private readonly personStrategy: PersonUpsertStrategy,
     private readonly orgStrategy: OrganizationUpsertStrategy,
+    private readonly pipelineStrategy: PipelineUpsertStrategy,
+    private readonly stageStrategy: StageUpsertStrategy,
   ) {
     super();
     this.syncHandlers = {
@@ -40,6 +50,14 @@ export class EntitySyncProcessor extends WorkerHost {
       organization: {
         fetch: (id) => this.pipedriveApi.getOrganizationById(id),
         upsert: this.orgStrategy,
+      },
+      pipeline: {
+        fetch: (id) => this.pipedriveApi.getPipelineById(id),
+        upsert: this.pipelineStrategy,
+      },
+      stage: {
+        fetch: (id) => this.pipedriveApi.getStageById(id),
+        upsert: this.stageStrategy,
       },
     };
   }
@@ -65,7 +83,6 @@ export class EntitySyncProcessor extends WorkerHost {
         this.logger.warn(
           `No data found in Pipedrive for ${entityType} ID ${entityId}. The entity may have been deleted. Job will be completed without update.`,
         );
-        // We don't throw an error here, because a retry won't solve a deleted entity.
         return;
       }
 
@@ -80,7 +97,6 @@ export class EntitySyncProcessor extends WorkerHost {
         `Error syncing ${entityType} ID ${entityId}: ${error}`,
         (error as Error).stack,
       );
-      // Re-throw the error to allow BullMQ to handle retries
       throw error;
     }
   }

@@ -11,6 +11,10 @@ import { PipedriveApiModule } from '@src/pipedrive-api/pipedrive-api.module';
 import { PersonUpsertStrategy } from '@src/webhooks/processing/strategies/person-upsert.strategy';
 import { OrganizationUpsertStrategy } from '@src/webhooks/processing/strategies/organization-upsert.strategy';
 import { DealModule } from '@src/deal/deal.module';
+import { PipelineModule } from '@src/pipeline/pipeline.module';
+import { StageModule } from '@src/stage/stage.module';
+import { PipelineUpsertStrategy } from '@src/webhooks/processing/strategies/pipeline-upsert.strategy';
+import { StageUpsertStrategy } from '@src/webhooks/processing/strategies/stage-upsert.strategy';
 
 @Module({
   imports: [
@@ -19,6 +23,8 @@ import { DealModule } from '@src/deal/deal.module';
     ConfigModule,
     PipedriveApiModule,
     DealModule,
+    PipelineModule,
+    StageModule,
     BullModule.registerQueueAsync({
       name: ENTITY_SYNC_QUEUE_TOKEN,
       useFactory: () => ({
@@ -31,6 +37,8 @@ import { DealModule } from '@src/deal/deal.module';
     EntitySyncProcessor,
     PersonUpsertStrategy,
     OrganizationUpsertStrategy,
+    PipelineUpsertStrategy,
+    StageUpsertStrategy,
   ],
   exports: [RelatedEntityEnsureService],
 })

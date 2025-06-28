@@ -42,6 +42,8 @@ export class WebhooksController {
       [PipedriveEntity.ORGANIZATION]:
         WebhookJobName.PROCESS_ORGANIZATION_WEBHOOK,
       [PipedriveEntity.DEAL]: WebhookJobName.PROCESS_DEAL_WEBHOOK,
+      [PipedriveEntity.PIPELINE]: WebhookJobName.PROCESS_PIPELINE_WEBHOOK,
+      [PipedriveEntity.STAGE]: WebhookJobName.PROCESS_STAGE_WEBHOOK,
     };
 
     return jobNameMap[entityType] || WebhookJobName.PROCESS_UNKNOWN_WEBHOOK;

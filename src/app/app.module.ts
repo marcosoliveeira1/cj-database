@@ -14,6 +14,8 @@ import { EnvSchema } from '@src/config/env.schema';
 import { SynchronizationModule } from '@src/synchronization/synchronization.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { PipedriveApiModule } from '@src/pipedrive-api/pipedrive-api.module';
+import { PipelineModule } from '@src/pipeline/pipeline.module';
+import { StageModule } from '@src/stage/stage.module';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { PipedriveApiModule } from '@src/pipedrive-api/pipedrive-api.module';
     WebhooksModule,
     OrganizationModule,
     PersonModule,
+    PipelineModule,
+    StageModule,
     SynchronizationModule,
     PipedriveApiModule,
   ],

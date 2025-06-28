@@ -5,6 +5,10 @@ import { BaseUpsertStrategy, PrismaModelResult } from './base-upsert.strategy';
 import { Prisma, Deal } from '@prismaClient';
 import { DealInput } from '@src/webhooks/dtos/pipedrive.dto';
 import { RelatedEntityEnsureService } from '@src/synchronization/related-entity-ensure.service';
+import {
+  EntitySyncJobPayload,
+  ManagedEntityType,
+} from '@src/common/utils/queues.types';
 
 @Injectable()
 export class DealUpsertStrategy extends BaseUpsertStrategy<
@@ -32,13 +36,36 @@ export class DealUpsertStrategy extends BaseUpsertStrategy<
     }
 
     try {
-      await this.relatedEntityEnsureService.ensureExists(
-        'organization',
-        data.org_id,
-      );
-      await this.relatedEntityEnsureService.ensureExists(
-        'person',
-        data.person_id,
+      const dependencies: EntitySyncJobPayload[] = [
+        {
+          entityType: 'organization',
+          entityId: data.org_id as number,
+        },
+        {
+          entityType: 'person',
+          entityId: data.person_id as number,
+        },
+        {
+          entityType: 'pipeline',
+          entityId: data.pipeline_id as number,
+        },
+        {
+          entityType: 'stage',
+          entityId: data.stage_id as number,
+        },
+      ];
+
+      await Promise.all(
+        dependencies.map(
+          ({
+            entityType,
+            entityId,
+          }: {
+            entityType: ManagedEntityType;
+            entityId: number;
+          }) =>
+            this.relatedEntityEnsureService.ensureExists(entityType, entityId),
+        ),
       );
     } catch (error) {
       this.logger.error(
@@ -47,7 +74,6 @@ export class DealUpsertStrategy extends BaseUpsertStrategy<
       );
       throw error;
     }
-
     return super.upsert(data);
   }
 }

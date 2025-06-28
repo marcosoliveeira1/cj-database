@@ -4,10 +4,13 @@ import { Logger } from '@nestjs/common';
 import 'tsconfig-paths/register';
 import { ConfigService } from '@nestjs/config';
 import { EnvSchema } from './config/env.schema';
+import { WinstonModule } from 'nest-winston';
+import { winstonLoggerOptions } from './logger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
+    logger: WinstonModule.createLogger(winstonLoggerOptions),
   });
 
   const logger = new Logger('Bootstrap');

@@ -2,12 +2,14 @@ import { Logger, Injectable } from '@nestjs/common';
 import { logError } from '@src/common/utils/logger.utils';
 import { IMapper } from '@src/common/mapping/interfaces/mapper.interface';
 import { IRepository } from '@src/common/respository/interfaces/repository.interface';
-import { Person, Organization, Deal } from '@prismaClient';
+import { Person, Organization, Deal, Pipeline, Stage } from '@prismaClient';
 
 export type PrismaModelResult =
   | (Person & { entityType: 'person' })
   | (Organization & { entityType: 'organization' })
-  | (Deal & { entityType: 'deal' });
+  | (Deal & { entityType: 'deal' })
+  | (Pipeline & { entityType: 'pipeline' })
+  | (Stage & { entityType: 'stage' });
 
 export type PipedriveData = {
   id: number;
@@ -38,7 +40,12 @@ export class BaseUpsertStrategy<
       CreateInput,
       UpdateInput
     >,
-    protected readonly entityType: 'person' | 'organization' | 'deal',
+    protected readonly entityType:
+      | 'person'
+      | 'organization'
+      | 'deal'
+      | 'pipeline'
+      | 'stage',
   ) {
     this.logger = new Logger(this.constructor.name);
   }

@@ -6,6 +6,8 @@ import { EnvSchema } from '@src/config/env.schema';
 import {
   OrganizationInput,
   PersonInput,
+  PipelineInput,
+  StageInput,
 } from '@src/webhooks/dtos/pipedrive.dto';
 import { firstValueFrom } from 'rxjs';
 
@@ -80,11 +82,20 @@ export class PipedriveApiService {
     return this.getEntityById<OrganizationInput>('organization', id);
   }
 
+  async getPipelineById(id: number): Promise<PipelineInput | null> {
+    return this.getEntityById<PipelineInput>('pipeline', id);
+  }
+
+  async getStageById(id: number): Promise<StageInput | null> {
+    return this.getEntityById<StageInput>('stage', id);
+  }
+
   private async getEntityById<T>(
-    entityType: 'person' | 'organization',
+    entityType: 'person' | 'organization' | 'pipeline' | 'stage',
     id: number,
+    apiVersion: 'v1' | 'v2' = 'v2',
   ): Promise<T | null> {
-    const url = `${this.baseUrl}/v2/${entityType}s/${id}?api_token=${this.apiToken}`;
+    const url = `${this.baseUrl}/${apiVersion}/${entityType}s/${id}?api_token=${this.apiToken}`;
     this.logger.log(`Fetching ${entityType} with ID: ${id}`);
     try {
       const response = await firstValueFrom(
