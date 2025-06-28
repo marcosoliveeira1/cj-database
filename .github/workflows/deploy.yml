@@ -84,6 +84,9 @@ jobs:
           export PIPEDRIVE_API_TOKEN="${{ secrets.PIPEDRIVE_API_TOKEN }}"
           export PIPEDRIVE_API_URL="${{ secrets.PIPEDRIVE_API_URL }}"
           export REDIS_URL="${{ secrets.REDIS_URL }}"
+          export LOKI_URL="${{ secrets.LOKI_URL }}"
+          export LOKI_USERNAME="${{ secrets.LOKI_USERNAME }}"
+          export LOKI_PASSWORD="${{ secrets.LOKI_PASSWORD }}"
 
           # --- Run Prisma Migrate Deploy ---
           echo "--- Running Prisma Migration ---"

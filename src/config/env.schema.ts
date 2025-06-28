@@ -12,6 +12,10 @@ export const envSchema = z.object({
   PIPEDRIVE_API_TOKEN: z.string().min(1),
   PIPEDRIVE_API_URL: z.string().url().default('https://api.pipedrive.com/v1'),
 
+  LOKI_URL: z.string().url(),
+  LOKI_USERNAME: z.string().min(1),
+  LOKI_PASSWORD: z.string().min(1),
+
   REDIS_URL: z.string().url(),
 });
 
