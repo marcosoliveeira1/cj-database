@@ -12,8 +12,7 @@ export class OrganizationMapper
       OrganizationInput,
       Prisma.OrganizationCreateInput,
       Prisma.OrganizationUpdateInput
-    >
-{
+    > {
   private readonly logger = new Logger(OrganizationMapper.name);
 
   constructor(

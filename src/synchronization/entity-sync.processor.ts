@@ -18,13 +18,20 @@ import {
   PersonInput,
   PipelineInput,
   StageInput,
+  UserInput,
 } from '@src/webhooks/dtos/pipedrive.dto';
+import { UserUpsertStrategy } from '@src/webhooks/processing/strategies/user-upsert.strategy';
 
 type SyncHandler = {
   fetch: (
     id: number,
   ) => Promise<
-    PersonInput | OrganizationInput | PipelineInput | StageInput | null
+    | PersonInput
+    | OrganizationInput
+    | PipelineInput
+    | StageInput
+    | UserInput
+    | null
   >;
   upsert: IUpsertStrategy;
 };
@@ -40,6 +47,7 @@ export class EntitySyncProcessor extends WorkerHost {
     private readonly orgStrategy: OrganizationUpsertStrategy,
     private readonly pipelineStrategy: PipelineUpsertStrategy,
     private readonly stageStrategy: StageUpsertStrategy,
+    private readonly userStrategy: UserUpsertStrategy,
   ) {
     super();
     this.syncHandlers = {
@@ -58,6 +66,10 @@ export class EntitySyncProcessor extends WorkerHost {
       stage: {
         fetch: (id) => this.pipedriveApi.getStageById(id),
         upsert: this.stageStrategy,
+      },
+      user: {
+        fetch: (id) => this.pipedriveApi.getUserById(id),
+        upsert: this.userStrategy,
       },
     };
   }

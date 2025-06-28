@@ -8,6 +8,7 @@ import {
   PersonInput,
   PipelineInput,
   StageInput,
+  UserInput,
 } from '@src/webhooks/dtos/pipedrive.dto';
 import { firstValueFrom } from 'rxjs';
 
@@ -90,8 +91,12 @@ export class PipedriveApiService {
     return this.getEntityById<StageInput>('stage', id);
   }
 
+  async getUserById(id: number): Promise<UserInput | null> {
+    return this.getEntityById<UserInput>('user', id, 'v1');
+  }
+
   private async getEntityById<T>(
-    entityType: 'person' | 'organization' | 'pipeline' | 'stage',
+    entityType: 'person' | 'organization' | 'pipeline' | 'stage' | 'user',
     id: number,
     apiVersion: 'v1' | 'v2' = 'v2',
   ): Promise<T | null> {

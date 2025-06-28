@@ -15,6 +15,8 @@ import { PipelineModule } from '@src/pipeline/pipeline.module';
 import { StageModule } from '@src/stage/stage.module';
 import { PipelineUpsertStrategy } from '@src/webhooks/processing/strategies/pipeline-upsert.strategy';
 import { StageUpsertStrategy } from '@src/webhooks/processing/strategies/stage-upsert.strategy';
+import { UserUpsertStrategy } from '@src/webhooks/processing/strategies/user-upsert.strategy';
+import { UserModule } from '@src/user/user.module';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { StageUpsertStrategy } from '@src/webhooks/processing/strategies/stage-u
     DealModule,
     PipelineModule,
     StageModule,
+    UserModule,
     BullModule.registerQueueAsync({
       name: ENTITY_SYNC_QUEUE_TOKEN,
       useFactory: () => ({
@@ -39,6 +42,7 @@ import { StageUpsertStrategy } from '@src/webhooks/processing/strategies/stage-u
     OrganizationUpsertStrategy,
     PipelineUpsertStrategy,
     StageUpsertStrategy,
+    UserUpsertStrategy,
   ],
   exports: [RelatedEntityEnsureService],
 })

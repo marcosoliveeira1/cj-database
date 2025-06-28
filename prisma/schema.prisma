@@ -152,6 +152,7 @@ model Person {
 
   pipedriveUpdateTime DateTime? @map("update_time")
   visibleTo           String?   @map("visible_to")
+  organizationId      Int?
 
   birthday                   DateTime? @map("birthday")
   postal_address             String?   @map("postal_address") // use .formatted_address
@@ -168,24 +169,23 @@ model Person {
   infos_alinhamento          String?   @map("infos_alinhamento") @db.Text
   job_title                  String?   @map("job_title")
 
-  campo_indicacao              String?   @map("campo_indicacao") // New
-  id_buzzlead                  String?   @map("id_buzzlead") // New
-  form_de_atualizacao_embaixador String?   @map("form_de_atualizacao_embaixador") // New
+  campo_indicacao                String? @map("campo_indicacao") // New
+  id_buzzlead                    String? @map("id_buzzlead") // New
+  form_de_atualizacao_embaixador String? @map("form_de_atualizacao_embaixador") // New
 
   emails PersonEmail[]
   phones PersonPhone[]
 
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  organization   Organization? @relation("OrganizationPersons", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  deals          Deal[]        @relation("PersonDeals")
-  organizationId Int?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  organization Organization? @relation("OrganizationPersons", fields: [orgId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  deals        Deal[]        @relation("PersonDeals")
+
+  sync_status String? @default("synced")
 
   @@index([ownerId])
   @@index([orgId])
   @@map("persons")
-
-  sync_status         String?   @default("synced")
 }
 
 model Organization {
@@ -220,9 +220,9 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("organizations")
+  sync_status String? @default("synced")
 
-  sync_status         String?   @default("synced")
+  @@map("organizations")
 }
 
 model PersonEmail {
@@ -254,13 +254,13 @@ model PersonPhone {
 }
 
 model Pipeline {
-  id                Int       @id @map("id")
-  name              String?
-  urlTitle          String?   @map("url_title")
-  orderNr           Int?      @map("order_nr")
-  activeFlag        Boolean?  @map("active_flag")
-  dealProbability   Boolean?  @map("deal_probability")
-  pipedriveAddTime  DateTime? @map("add_time")
+  id                  Int       @id @map("id")
+  name                String?
+  urlTitle            String?   @map("url_title")
+  orderNr             Int?      @map("order_nr")
+  activeFlag          Boolean?  @map("active_flag")
+  dealProbability     Boolean?  @map("deal_probability")
+  pipedriveAddTime    DateTime? @map("add_time")
   pipedriveUpdateTime DateTime? @map("update_time")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -272,14 +272,14 @@ model Pipeline {
 }
 
 model Stage {
-  id                Int       @id @map("id")
-  name              String?
-  orderNr           Int?      @map("order_nr")
-  activeFlag        Boolean?  @map("active_flag")
-  dealProbability   Int?      @map("deal_probability")
-  rottenFlag        Boolean?  @map("rotten_flag")
-  rottenDays        Int?      @map("rotten_days")
-  pipedriveAddTime  DateTime? @map("add_time")
+  id                  Int       @id @map("id")
+  name                String?
+  orderNr             Int?      @map("order_nr")
+  activeFlag          Boolean?  @map("active_flag")
+  dealProbability     Int?      @map("deal_probability")
+  rottenFlag          Boolean?  @map("rotten_flag")
+  rottenDays          Int?      @map("rotten_days")
+  pipedriveAddTime    DateTime? @map("add_time")
   pipedriveUpdateTime DateTime? @map("update_time")
 
   pipelineId Int? @map("pipeline_id")
@@ -290,4 +290,23 @@ model Stage {
   sync_status String? @default("synced")
 
   @@map("stages")
+}
+
+model User {
+  id                Int       @id @map("id")
+  name              String
+  email             String?   @unique
+  phone             String?
+  activeFlag        Boolean   @map("active_flag")
+  iconUrl           String?   @map("icon_url")
+  lastLogin         DateTime? @map("last_login")
+  pipedriveCreated  DateTime? @map("created")
+  pipedriveModified DateTime? @map("modified")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  sync_status String? @default("synced")
+
+  @@map("users")
 }

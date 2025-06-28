@@ -4,6 +4,7 @@ export enum PipedriveEntity {
   DEAL = 'deal',
   PIPELINE = 'pipeline',
   STAGE = 'stage',
+  USER = 'user',
 }
 
 export enum PipedriveAction {

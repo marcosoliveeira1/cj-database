@@ -5,10 +5,6 @@ import { BaseUpsertStrategy, PrismaModelResult } from './base-upsert.strategy';
 import { Prisma, Deal } from '@prismaClient';
 import { DealInput } from '@src/webhooks/dtos/pipedrive.dto';
 import { RelatedEntityEnsureService } from '@src/synchronization/related-entity-ensure.service';
-import {
-  EntitySyncJobPayload,
-  ManagedEntityType,
-} from '@src/common/utils/queues.types';
 
 @Injectable()
 export class DealUpsertStrategy extends BaseUpsertStrategy<
@@ -21,7 +17,7 @@ export class DealUpsertStrategy extends BaseUpsertStrategy<
   constructor(
     @Inject(DealMapper) dealMapper: DealMapper,
     @Inject(IDealRepository) dealRepository: IDealRepository,
-    private readonly relatedEntityEnsureService: RelatedEntityEnsureService,
+    private readonly service: RelatedEntityEnsureService,
   ) {
     super(dealMapper, dealRepository, 'deal');
   }
@@ -36,37 +32,12 @@ export class DealUpsertStrategy extends BaseUpsertStrategy<
     }
 
     try {
-      const dependencies: EntitySyncJobPayload[] = [
-        {
-          entityType: 'organization',
-          entityId: data.org_id as number,
-        },
-        {
-          entityType: 'person',
-          entityId: data.person_id as number,
-        },
-        {
-          entityType: 'pipeline',
-          entityId: data.pipeline_id as number,
-        },
-        {
-          entityType: 'stage',
-          entityId: data.stage_id as number,
-        },
-      ];
-
-      await Promise.all(
-        dependencies.map(
-          ({
-            entityType,
-            entityId,
-          }: {
-            entityType: ManagedEntityType;
-            entityId: number;
-          }) =>
-            this.relatedEntityEnsureService.ensureExists(entityType, entityId),
-        ),
-      );
+      await Promise.all([
+        this.service.ensureExists('organization', data.org_id),
+        this.service.ensureExists('person', data.person_id),
+        this.service.ensureExists('user', data.owner_id),
+        this.service.ensureExists('user', data.creator_user_id),
+      ]);
     } catch (error) {
       this.logger.error(
         `Failed to ensure related entities for Deal ID ${pipedriveId}: ${error}`,

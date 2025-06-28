@@ -13,6 +13,7 @@ import {
   ManagedEntityType,
 } from '@src/common/utils/queues.types';
 import { IRepository } from '@src/common/respository/interfaces/repository.interface';
+import { IUserRepository } from '@src/user/interfaces/user-repository.interface';
 
 @Injectable()
 export class RelatedEntityEnsureService {
@@ -27,6 +28,8 @@ export class RelatedEntityEnsureService {
     private readonly pipelineRepository: IPipelineRepository,
     @Inject(IStageRepository)
     private readonly stageRepository: IStageRepository,
+    @Inject(IUserRepository)
+    private readonly userRepository: IUserRepository,
     @InjectQueue(ENTITY_SYNC_QUEUE_TOKEN)
     private readonly entitySyncQueue: Queue<
       EntitySyncJobPayload,
@@ -109,6 +112,8 @@ export class RelatedEntityEnsureService {
       return this.pipelineRepository;
     } else if (entityType === 'stage') {
       return this.stageRepository;
+    } else if (entityType === 'user') {
+      return this.userRepository;
     }
     throw new Error(
       `Invalid managed entity type for repository: ${entityType as string}`,
@@ -124,6 +129,8 @@ export class RelatedEntityEnsureService {
       return EntitySyncJobName.SYNC_PIPELINE;
     } else if (entityType === 'stage') {
       return EntitySyncJobName.SYNC_STAGE;
+    } else if (entityType === 'user') {
+      return EntitySyncJobName.SYNC_USER;
     }
     throw new Error(
       `Invalid managed entity type for job name: ${entityType as string}`,

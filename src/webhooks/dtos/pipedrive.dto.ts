@@ -87,3 +87,15 @@ export type StageInput = {
   add_time: string;
   update_time: string;
 };
+
+export type UserInput = {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  created: string;
+  modified: string;
+  last_login: string;
+  active_flag: boolean;
+  icon_url: string | null;
+};
