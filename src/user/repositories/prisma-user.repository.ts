@@ -21,4 +21,13 @@ export class PrismaUserRepository
   constructor(prisma: PrismaService) {
     super(prisma);
   }
+
+  protected getPlaceholderData(id: number): Prisma.UserCreateInput {
+    return {
+      id,
+      name: `Pipedrive User #${id}`,
+      sync_status: 'placeholder',
+      activeFlag: false,
+    };
+  }
 }

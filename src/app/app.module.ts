@@ -16,6 +16,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { PipedriveApiModule } from '@src/pipedrive-api/pipedrive-api.module';
 import { PipelineModule } from '@src/pipeline/pipeline.module';
 import { StageModule } from '@src/stage/stage.module';
+import { UserModule } from '@src/user/user.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { StageModule } from '@src/stage/stage.module';
     PersonModule,
     PipelineModule,
     StageModule,
+    UserModule,
     SynchronizationModule,
     PipedriveApiModule,
   ],

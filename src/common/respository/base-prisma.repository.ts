@@ -51,7 +51,9 @@ export abstract class BasePrismaRepository<
       logError(`Error in ${this.entityName} upsert for ID ${id}`, error);
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         this.logger.error(
-          `Prisma Error Code: ${error.code}, Meta: ${JSON.stringify(error.meta)}`,
+          `Prisma Error Code: ${error.code}, Meta: ${JSON.stringify(
+            error.meta,
+          )}`,
         );
         if (error.code === 'P2003') {
           this.logger.error(
@@ -79,12 +81,16 @@ export abstract class BasePrismaRepository<
     }
   }
 
+  protected getPlaceholderData(id: number): C {
+    return {
+      id,
+      sync_status: 'placeholder',
+    } as C;
+  }
+
   async createPlaceholder({ id }: { id: number }): Promise<T | null> {
     try {
-      const placeholderData = {
-        id,
-        sync_status: 'placeholder',
-      } as C;
+      const placeholderData = this.getPlaceholderData(id);
 
       const result = await this.delegate.create({
         data: placeholderData,

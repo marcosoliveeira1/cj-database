@@ -13,6 +13,7 @@ import { DealUpsertStrategy } from './strategies/deal-upsert.strategy';
 import { PipelineUpsertStrategy } from './strategies/pipeline-upsert.strategy';
 import { StageUpsertStrategy } from './strategies/stage-upsert.strategy';
 import { extractWebhookMetadata } from '../utils/webhook-payload.utils';
+import { UserUpsertStrategy } from './strategies/user-upsert.strategy';
 
 @Injectable()
 export class WebhookProcessingService {
@@ -27,6 +28,7 @@ export class WebhookProcessingService {
     private readonly dealStrategy: DealUpsertStrategy,
     private readonly pipelineStrategy: PipelineUpsertStrategy,
     private readonly stageStrategy: StageUpsertStrategy,
+    private readonly userStrategy: UserUpsertStrategy,
   ) {
     this.strategyMap = {
       [PipedriveEntity.ORGANIZATION]: this.orgStrategy,
@@ -34,6 +36,7 @@ export class WebhookProcessingService {
       [PipedriveEntity.DEAL]: this.dealStrategy,
       [PipedriveEntity.PIPELINE]: this.pipelineStrategy,
       [PipedriveEntity.STAGE]: this.stageStrategy,
+      [PipedriveEntity.USER]: this.userStrategy,
     };
   }
 
