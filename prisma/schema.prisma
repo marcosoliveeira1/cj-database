@@ -164,7 +164,7 @@ model Person {
   id_huggy                   String?   @map("id_huggy")
   agente_familia_responsavel Json?     @map("agente_familia_responsavel")
   transcricao_de_casamento   String?   @map("transcricao_de_casamento")
-  motivo_de_entrada_na_loja  Json?     @map("motivo_de_entrada_na_loja")
+  motivo_de_entrada_na_loja  String?     @map("motivo_de_entrada_na_loja")
   numero_de_assento          String?   @map("numero_de_assento")
   infos_alinhamento          String?   @map("infos_alinhamento") @db.Text
   job_title                  String?   @map("job_title")

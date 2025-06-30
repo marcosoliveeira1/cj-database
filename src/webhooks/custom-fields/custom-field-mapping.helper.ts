@@ -1,26 +1,31 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import { CustomFieldMappingService } from './custom-field-mapping.service';
 import {
   parseDate,
   safeParseFloat,
   safeParseInt,
 } from '@src/common/mapping/utils/mapping.utils';
 import { PipedriveApiService } from '@src/pipedrive-api/pipedrive-api.service';
+import {
+  CustomFieldMappingType,
+  dealFieldMappings,
+  EntityType,
+  organizationFieldMappings,
+  personFieldMappings,
+} from './custom-field.mappings';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { EnvSchema } from '@src/config/env.schema';
 
 type OptionsMap = Record<string, { id: number; label: string }[]>;
-type EntityType = 'person' | 'organization' | 'deal';
 
 @Injectable()
 export class CustomFieldMapperHelper {
   private readonly logger = new Logger(CustomFieldMapperHelper.name);
+  private readonly mappings: Record<EntityType, CustomFieldMappingType>;
   private readonly cacheTtl: number;
 
   constructor(
-    private readonly mappingService: CustomFieldMappingService,
     private readonly pipedriveApi: PipedriveApiService,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
     configService: ConfigService<EnvSchema>,
@@ -28,44 +33,11 @@ export class CustomFieldMapperHelper {
     this.cacheTtl =
       (configService.get('CACHE_TTL_SECONDS', { infer: true }) as number) *
       1000;
-  }
-
-  async mapCustomFieldsToInput<T extends Record<string, any>>(
-    entityType: EntityType,
-    data: Record<string, any> | null | undefined,
-  ): Promise<Partial<T>> {
-    const { custom_fields: customFieldsData }: Record<string, any> = data || {};
-
-    const mappedFields: Partial<T> = {};
-    if (!customFieldsData) return mappedFields;
-
-    const staticMapping = this.mappingService.getMappingFor(entityType);
-    const enumOptionsMap = await this.getRefreshedEnumOptionsMap(
-      entityType,
-      customFieldsData as Record<string, any>,
-      staticMapping,
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    for (const [pipedriveKey, value] of Object.entries(customFieldsData)) {
-      const mapInfo = staticMapping[pipedriveKey];
-      if (mapInfo) {
-        const { prismaField, type } = mapInfo;
-        const preparedValue = this.prepareValueBasedOnType(
-          value,
-          type,
-          enumOptionsMap[pipedriveKey],
-        );
-
-        (mappedFields as Record<string, any>)[prismaField] = preparedValue;
-      } else {
-        if (pipedriveKey === 'im') continue;
-        this.logger.debug(
-          `No mapping found for ${entityType} custom field hash: ${pipedriveKey}`,
-        );
-      }
-    }
-    return mappedFields;
+    this.mappings = {
+      deal: dealFieldMappings,
+      person: personFieldMappings,
+      organization: organizationFieldMappings,
+    };
   }
 
   /**
@@ -75,7 +47,10 @@ export class CustomFieldMapperHelper {
   private async getRefreshedEnumOptionsMap(
     entityType: EntityType,
     customFieldsData: Record<string, any>,
-    staticMapping: Record<string, { prismaField: string; type: string }>,
+    staticMapping: Record<
+      string,
+      { prismaField: string; pipedriveType: string }
+    >,
   ): Promise<OptionsMap> {
     const cacheKey = `pipedrive-enum-options:${entityType}`;
     let enumOptionsMap = await this.cache.get<OptionsMap>(cacheKey);
@@ -85,11 +60,10 @@ export class CustomFieldMapperHelper {
       // Check if the cached map is stale
       const missingKeys = Object.keys(customFieldsData).filter((key) => {
         const mapInfo = staticMapping[key];
-        return (
+        const isEnumOrSet =
           mapInfo &&
-          (mapInfo.type === 'enum' || mapInfo.type === 'set') &&
-          !enumOptionsMap![key]
-        );
+          (mapInfo.pipedriveType === 'enum' || mapInfo.pipedriveType === 'set');
+        return isEnumOrSet && !enumOptionsMap![key];
       });
 
       if (missingKeys.length > 0) {
@@ -130,6 +104,49 @@ export class CustomFieldMapperHelper {
     return newMap;
   }
 
+  async mapCustomFieldsToInput<T extends Record<string, any>>(
+    entityType: EntityType,
+    data: Record<string, any> | null | undefined,
+  ): Promise<Partial<T>> {
+    const customFieldsData = data?.custom_fields as Record<string, any>;
+    const mappedFields: Partial<T> = {};
+
+    if (!customFieldsData) {
+      return mappedFields;
+    }
+
+    const entityMappings = this.mappings[entityType];
+    if (!entityMappings) {
+      this.logger.warn(`No mappings defined for entity type: ${entityType}`);
+      return {};
+    }
+
+    const enumOptionsMap = await this.getRefreshedEnumOptionsMap(
+      entityType,
+      customFieldsData,
+      entityMappings,
+    );
+
+    for (const pipedriveHash in customFieldsData) {
+      if (Object.prototype.hasOwnProperty.call(entityMappings, pipedriveHash)) {
+        const mapping = entityMappings[pipedriveHash];
+        const { prismaField, pipedriveType } = mapping;
+        const value = customFieldsData[pipedriveHash] as Record<string, any>;
+
+        if (value !== undefined && value !== null) {
+          const preparedValue = this.prepareValueBasedOnType(
+            value,
+            pipedriveType,
+            enumOptionsMap[pipedriveHash],
+          );
+          (mappedFields as Record<string, any>)[prismaField] = preparedValue;
+        }
+      }
+    }
+
+    return mappedFields;
+  }
+
   private prepareValueBasedOnType(
     value: any,
     type: string,
@@ -143,17 +160,18 @@ export class CustomFieldMapperHelper {
       case 'time':
         return typeof value === 'object' && value !== null && 'value' in value
           ? parseDate((value as { value?: string })?.value)?.toISOString()
-          : parseDate(value as string)?.toISOString();
+          : parseDate(value)?.toISOString();
       case 'int':
       case 'user':
       case 'stage':
       case 'pipeline':
-        return safeParseInt(value);
+        return typeof value === 'object' && value !== null && 'id' in value
+          ? safeParseInt((value as { id: number }).id)
+          : safeParseInt(value);
       case 'double':
       case 'monetary':
         return safeParseFloat(value);
-      case 'enum':
-      case 'set': {
+      case 'enum': {
         const valueId =
           typeof value === 'object' && value !== null && 'id' in value
             ? (value as { id: number }).id
@@ -173,6 +191,43 @@ export class CustomFieldMapperHelper {
         }
         return foundOption.label;
       }
+      case 'set': {
+        if (
+          typeof value !== 'object' ||
+          value === null ||
+          !Array.isArray(value.values)
+        ) {
+          this.logger.warn(
+            `Unexpected structure for 'set' type field. Expected { values: [] }, got: ${JSON.stringify(value)}`,
+          );
+          return null;
+        }
+
+        const labels = value.values
+          .map((item: any) => {
+            const itemId = item?.id;
+            if (itemId === undefined) return null;
+
+            if (!enumOptions) {
+              this.logger.warn(
+                `No enum options available for 'set' type field. Returning raw ID: ${itemId}`,
+              );
+              return String(itemId);
+            }
+
+            const foundOption = enumOptions.find((opt) => opt.id == itemId);
+            if (!foundOption) {
+              this.logger.warn(
+                `Option with ID '${itemId}' not found in 'set' options. Returning raw ID.`,
+              );
+              return String(itemId);
+            }
+            return foundOption.label;
+          })
+          .filter((label: string | null): label is string => label !== null);
+
+        return labels.join(', ');
+      }
       case 'visible_to':
         if (typeof value === 'object' && value !== null && 'id' in value) {
           return String((value as { id: number | string }).id);
@@ -191,6 +246,7 @@ export class CustomFieldMapperHelper {
           : String(value);
       case 'text':
       case 'varchar':
+      case 'varchar_auto': // Pipedrive API sometimes returns this for text fields
         return typeof value === 'object' && value !== null && 'value' in value
           ? String((value as { value?: string }).value)
           : String(value);
