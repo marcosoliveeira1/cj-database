@@ -67,8 +67,8 @@ export class PersonMapper
       pipedriveUpdateTime: parseDate(data.update_time),
       visibleTo: data.visible_to,
       ...customFields,
-      emails: this.prepareEmailInput(data.emails),
-      phones: this.preparePhoneInput(data.phones),
+      emails: this.prepareEmailInput(data.emails ?? null),
+      phones: this.preparePhoneInput(data.phones ?? null),
       organization: data.org_id ? { connect: { id: data.org_id } } : undefined,
     };
   }
@@ -95,8 +95,14 @@ export class PersonMapper
       pipedriveUpdateTime: parseDate(data.update_time),
       visibleTo: data.visible_to,
       ...customFields,
-      emails: { deleteMany: {}, ...this.prepareEmailInput(data.emails) },
-      phones: { deleteMany: {}, ...this.preparePhoneInput(data.phones) },
+      emails: {
+        deleteMany: {},
+        ...this.prepareEmailInput(data.emails ?? null),
+      },
+      phones: {
+        deleteMany: {},
+        ...this.preparePhoneInput(data.phones ?? null),
+      },
       organization: orgUpdate,
       sync_status: 'synced',
     };

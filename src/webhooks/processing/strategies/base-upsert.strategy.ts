@@ -22,8 +22,9 @@ export type PrismaModelResult =
 export type PipedriveData = {
   id: number;
   custom_fields?: Record<string, any> | null;
-  add_time?: string;
-  update_time?: string;
+  add_time?: string | null;
+  update_time?: string | null;
+  sync_status?: string;
   [key: string]: any;
 };
 
