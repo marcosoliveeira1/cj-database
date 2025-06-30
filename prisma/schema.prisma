@@ -83,7 +83,7 @@ model Deal {
   nome_completo_portugues           String?   @map("nome_completo_portugues")
   nome_completo_mae_portugues       String?   @map("nome_completo_mae_portugues")
   nome_completo_pai_portugues       String?   @map("nome_completo_pai_portugues")
-  concelho_nascimento_portuga       String?   @map("concelho_nascimento_portuga")
+  concelho_nascimento_portuga       String?   @map("concelho_nascimento_portuga") @db.VarChar(255)
   numero_rastreamento               String?   @map("numero_rastreamento")
   valor_certidao                    String?   @map("valor_certidao")
   nome_completo_contratante         String?   @map("nome_completo_contratante")
