@@ -20,7 +20,7 @@ async function bootstrap() {
 
   const port = configService.get('PORT', { infer: true });
   await app.listen(port as number);
-  logger.log(`HTTP Application listening on port ${port}`);
+  logger.log(`HTTP Application listening on port ${await app.getUrl()}`);
 }
 
 void bootstrap();

@@ -17,6 +17,7 @@ import { PipedriveApiModule } from '@src/pipedrive-api/pipedrive-api.module';
 import { PipelineModule } from '@src/pipeline/pipeline.module';
 import { StageModule } from '@src/stage/stage.module';
 import { UserModule } from '@src/user/user.module';
+import { SchemaModule } from '@src/schema/schema.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { UserModule } from '@src/user/user.module';
     UserModule,
     SynchronizationModule,
     PipedriveApiModule,
+    SchemaModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_PIPE, useClass: ZodValidationPipe }],
