@@ -35,6 +35,8 @@ export class DealUpsertStrategy extends BaseUpsertStrategy<
       await Promise.all([
         this.service.ensureExists('organization', data.org_id),
         this.service.ensureExists('person', data.person_id),
+        this.service.ensureExists('pipeline', data.pipeline_id),
+        this.service.ensureExists('stage', data.stage_id),
         this.service.ensureExists('user', data.owner_id),
         this.service.ensureExists('user', data.creator_user_id),
       ]);
