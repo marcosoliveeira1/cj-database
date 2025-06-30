@@ -77,7 +77,7 @@ model Deal {
   certidao_portugues                String?   @map("certidao_portugues")
   cf_nome                           String?   @map("cf_nome")
   cf_telefone                       String?   @map("cf_telefone")
-  numero_assento                    String?   @map("numero_assento")
+  numero_assento                    String?   @map("numero_assento") @db.VarChar(255)
   numero_processo_portugal          String?   @map("numero_processo_portugal")
   sao_menores_idade                 String?   @map("sao_menores_idade")
   nome_completo_portugues           String?   @map("nome_completo_portugues")
