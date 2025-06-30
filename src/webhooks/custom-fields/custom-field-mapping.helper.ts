@@ -143,7 +143,7 @@ export class CustomFieldMapperHelper {
       case 'time':
         return typeof value === 'object' && value !== null && 'value' in value
           ? parseDate((value as { value?: string })?.value)?.toISOString()
-          : String(value);
+          : parseDate(value)?.toISOString();
       case 'int':
       case 'user':
       case 'stage':
