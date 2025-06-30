@@ -6,6 +6,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { BasicAuthGuard } from '@src/auth/guards/basic-auth.guard';
 import { PipedriveWebhookPayloadDto } from './dtos/pipedrive-webhook.zod';
@@ -63,18 +64,35 @@ export class WebhooksController {
     const { entity, action, pipedriveId, rawEntity } =
       extractWebhookMetadata(payload);
 
-    const jobId = `pipedrive-${entity}-${pipedriveId}-${Date.now()}`;
+    const webhookEventId = payload.meta?.id;
+
+    if (!webhookEventId) {
+      this.logger.error(
+        `Pipedrive Webhook (Entity: ${entity}, ID: ${pipedriveId}) is missing the 'meta.id' field, which is required for idempotency. Rejecting the request.`,
+      );
+      throw new BadRequestException(
+        "Webhook payload missing 'meta.id' for idempotency key.",
+      );
+    }
+
+    const jobId = `pipedrive-webhook-${webhookEventId}`;
     const jobName = this.getJobNameForPayload(payload);
 
     this.logger.log(
-      `Received Pipedrive Webhook for ${rawEntity || entity} ${action} (Pipedrive ID: ${pipedriveId}). Adding job with Name: '${jobName}' and ID: '${jobId}' to BullMQ queue '${this.webhookQueue.name}'.`,
+      `Received Pipedrive Webhook for ${
+        rawEntity || entity
+      } ${action} (Pipedrive ID: ${pipedriveId}). Adding job with Name: '${jobName}' and ID: '${jobId}' to BullMQ queue '${
+        this.webhookQueue.name
+      }'.`,
     );
 
     try {
       const job = await this.webhookQueue.add(jobName, payload, { jobId });
 
       this.logger.log(
-        `Job added successfully: Name='${job.name}', ID='${job.id}' for Pipedrive ${rawEntity || entity} ID ${pipedriveId}.`,
+        `Job added successfully: Name='${job.name}', ID='${job.id}' for Pipedrive ${
+          rawEntity || entity
+        } ID ${pipedriveId}.`,
       );
 
       return {

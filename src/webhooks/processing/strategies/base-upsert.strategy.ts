@@ -22,6 +22,8 @@ export type PrismaModelResult =
 export type PipedriveData = {
   id: number;
   custom_fields?: Record<string, any> | null;
+  add_time?: string;
+  update_time?: string;
   [key: string]: any;
 };
 
@@ -31,7 +33,7 @@ export interface IUpsertStrategy {
 
 @Injectable()
 export class BaseUpsertStrategy<
-  Entity extends { id: number },
+  Entity extends { id: number; pipedriveUpdateTime?: Date | null },
   InputDto extends PipedriveData,
   CreateInput,
   UpdateInput,
@@ -67,6 +69,26 @@ export class BaseUpsertStrategy<
       );
       return null;
     }
+
+    const incomingUpdateTime = new Date(data.update_time ?? '');
+    const existingEntity = await this.repository.findById(pipedriveId);
+
+    if (
+      data?.update_time &&
+      existingEntity &&
+      existingEntity.pipedriveUpdateTime
+    ) {
+      if (incomingUpdateTime <= existingEntity.pipedriveUpdateTime) {
+        this.logger.log(
+          `Skipping stale webhook for ${this.entityType} ID ${pipedriveId}. Incoming update time (${incomingUpdateTime.toISOString()}) is older than or equal to existing one (${existingEntity.pipedriveUpdateTime.toISOString()}).`,
+        );
+        return {
+          ...existingEntity,
+          entityType: this.entityType,
+        } as unknown as PrismaModelResult;
+      }
+    }
+
     this.logger.log(
       `Mapping and upserting ${this.entityType} with Pipedrive ID: ${pipedriveId}`,
     );
