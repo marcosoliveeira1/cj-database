@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 echo "--- Running: verify-deployment.sh ---"
@@ -31,11 +30,10 @@ if [ "$FAIL" == "1" ]; then
    [ -z "$TRAEFIK_STATUS" ] && docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs traefik || true
    [ -z "$DB_STATUS" ] && docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs db || true
    [ -z "$ACTIVE_APP_STATUS" ] && docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs "app_${FINAL_ACTIVE_COLOR}" || true
-   exit 1 # Fail the verification step
+   exit 1
 else
    echo "✅ All essential containers (Traefik, DB, Active App: $FINAL_ACTIVE_COLOR) are running."
 fi
-
 
 echo "Attempting to curl https://${APP_DOMAIN}..."
 RETRY_COUNT=0
@@ -46,7 +44,10 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
   CURL_EXIT_CODE=$?
   if [ $CURL_EXIT_CODE -eq 0 ]; then
     echo "✅ Verification Successful: Endpoint https://${APP_DOMAIN} is reachable and returned HTTP 2xx."
-    exit 0 # Success!
+
+    echo "--- Running Prisma migration ---"
+    docker exec -it "node-app-${FINAL_ACTIVE_COLOR}" npx prisma migrate deploy
+    exit 0
   fi
   RETRY_COUNT=$((RETRY_COUNT + 1))
   if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
@@ -54,7 +55,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     sleep $RETRY_DELAY
   else
     echo "❌ Verification Failed: Endpoint https://${APP_DOMAIN} is not reachable after $MAX_RETRIES retries (Exit code: $CURL_EXIT_CODE)."
-    exit 1 # Fail the verification step
+    exit 1
   fi
 done
 
