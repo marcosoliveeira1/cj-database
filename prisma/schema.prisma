@@ -233,7 +233,6 @@ model PersonEmail {
   personId Int     @map("person_id")
   person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
 
-  @@unique([personId, value])
   @@index([personId])
   @@index([value])
   @@map("person_emails")
@@ -247,7 +246,6 @@ model PersonPhone {
   personId Int     @map("person_id")
   person   Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
 
-  @@unique([personId, value])
   @@index([personId])
   @@index([value])
   @@map("person_phones")
