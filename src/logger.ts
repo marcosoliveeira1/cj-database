@@ -2,8 +2,10 @@ import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import * as winston from 'winston';
 import LokiTransport from 'winston-loki';
 
+const nodeEnv = process.env.NODE_ENV;
 const lokiHost = process.env.LOKI_URL ?? '';
 const lokiAuth = `${process.env.LOKI_USERNAME}:${process.env.LOKI_PASSWORD}`;
+const lokiAppLabel = process.env?.LOKI_APP_LABEL ?? `nestjs-app-${nodeEnv}`;
 
 export const winstonLoggerOptions: winston.LoggerOptions = {
   level: 'info',
@@ -29,7 +31,7 @@ export const winstonLoggerOptions: winston.LoggerOptions = {
     new LokiTransport({
       host: lokiHost,
       basicAuth: lokiAuth,
-      labels: { job: 'nestjs-app' },
+      labels: { job: lokiAppLabel, env: nodeEnv },
       json: true,
       replaceTimestamp: true,
     }),

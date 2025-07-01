@@ -23,8 +23,7 @@ export abstract class BasePrismaRepository<
     }) => Promise<T | null>;
     create: (args: { data: C; select?: any; include?: any }) => Promise<T>;
   },
-> implements IRepository<T, W, C, U>
-{
+> implements IRepository<T, W, C, U> {
   protected readonly logger: Logger;
   protected abstract delegate: D;
   protected abstract entityName: string;
@@ -55,13 +54,20 @@ export abstract class BasePrismaRepository<
             error.meta,
           )}`,
         );
+
+        const errorJson = JSON.stringify({
+          error,
+          create,
+          update,
+        });
+
         if (error.code === 'P2003') {
           this.logger.error(
-            `Foreign key constraint failed during ${this.entityName} upsert for ID ${id}.`,
+            `Foreign key constraint failed during ${this.entityName} upsert for ID ${id}. JSON: ${errorJson}`,
           );
         } else if (error.code === 'P2025') {
           this.logger.error(
-            `Record not found during ${this.entityName} upsert. ID: ${id}`,
+            `Record not found during ${this.entityName} upsert. ID: ${id}. JSON: ${errorJson}`,
           );
         }
       }
