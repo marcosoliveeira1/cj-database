@@ -193,6 +193,26 @@ export class CustomFieldMapperHelper {
       }
       case 'set': {
         if (
+          value !== null &&
+          typeof value === 'object' &&
+          Array.isArray(value)
+        ) {
+          return value
+            .map((item: any) => {
+              const foundOption = enumOptions?.find((opt) => opt.id == item);
+              if (!foundOption) {
+                this.logger.warn(
+                  `Option with ID '${item}' not found in 'set' options. Returning raw ID.`,
+                );
+                return String(item);
+              }
+              return foundOption.label;
+            })
+            .filter((label: string | null): label is string => label !== null)
+            .join(', ');
+        }
+
+        if (
           typeof value !== 'object' ||
           value === null ||
           !Array.isArray(value.values)
@@ -242,7 +262,7 @@ export class CustomFieldMapperHelper {
       case 'address':
         return typeof value === 'object' && value !== null
           ? (value as { formatted_address?: string }).formatted_address ||
-              JSON.stringify(value)
+          JSON.stringify(value)
           : String(value);
       case 'text':
       case 'varchar':
