@@ -18,6 +18,7 @@ import { PipelineModule } from '@src/pipeline/pipeline.module';
 import { StageModule } from '@src/stage/stage.module';
 import { UserModule } from '@src/user/user.module';
 import { SchemaModule } from '@src/schema/schema.module';
+import { QueueStatusModule } from '@src/queue-status/queue-status.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { SchemaModule } from '@src/schema/schema.module';
     SynchronizationModule,
     PipedriveApiModule,
     SchemaModule,
+    QueueStatusModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_PIPE, useClass: ZodValidationPipe }],
