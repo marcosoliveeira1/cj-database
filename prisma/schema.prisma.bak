@@ -74,7 +74,7 @@ model Deal {
   tipo_certidao_pt_automacao        String?   @map("tipo_certidao_pt_automacao")
   versao_precificacao_automacao     String?   @map("versao_precificacao_automacao")
   indicacao                         String?   @map("indicacao")
-  certidao_portugues                String?   @map("certidao_portugues") @db.VarChar(255)
+  certidao_portugues                String?   @map("certidao_portugues")
   cf_nome                           String?   @map("cf_nome")
   cf_telefone                       String?   @map("cf_telefone")
   numero_assento                    String?   @map("numero_assento") @db.VarChar(255)
