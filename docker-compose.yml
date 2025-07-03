@@ -45,10 +45,12 @@ services:
     labels:
       - "traefik.enable=true"
       # Rule to access dashboard via a subdomain (requires DNS setup for traefik.yourdomain.com)
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${APP_DOMAIN?Variable APP_DOMAIN is not set in .env}`)"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      # - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${APP_DOMAIN}`)"
+      # - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      # - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
+      # - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      # - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH_USER_PASS}"
+      # - "traefik.http.routers.traefik-dashboard.middlewares=traefik-auth"
       # Add Basic Authentication middleware for security
       # Generate user:pass hash: echo $(htpasswd -nb your_user your_password) | sed -e s/\\$/\\$\\$/g
       # Store the result in GitHub Secret: TRAEFIK_AUTH_USER_PASS
