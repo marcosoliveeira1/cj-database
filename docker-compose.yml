@@ -23,15 +23,20 @@ services:
       - '--certificatesresolvers.myresolver.acme.email=${APP_EMAIL?Variable APP_EMAIL is not set in .env}'
       # Let's Encrypt Storage
       - '--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json'
+      # Optimization for EC2 - reduce Docker polling
+      # - '--providers.docker.pollinterval=30s'
+      # - '--providers.docker.watch=true'
+      - '--global.sendanonymoususage=false'
       # Log level (optional, useful for debugging)
-      # - '--log.level=DEBUG'
+      - '--log.level=DEBUG'
       # Access Logs (optional)
       # - '--accesslog=true'
       # - '--accesslog.filepath=/logs/access.log'
+    # REMOVED: Explicit port mappings to fix the "closed network connection" issue
     ports:
-      - '80:80'    # HTTP entrypoint
-      - '443:443'  # HTTPS entrypoint
-      # - '8080:8080' # Optional: Expose Traefik API/Dashboard (secure it below)
+      - '80:80'    # Removed - causes conflict with Traefik's internal binding
+      - '443:443'  # Removed - causes conflict with Traefik's internal binding
+    #   - '8080:8080' # Optional: Expose Traefik API/Dashboard (secure it below)
     volumes:
       # Mount Docker socket to allow Traefik to detect container changes
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -41,6 +46,15 @@ services:
       # - ./traefik-logs:/logs
     networks:
       - traefik
+    # Resource limits for EC2 free tier
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
     # Labels for Traefik Dashboard (Optional, but useful)
     labels:
       - "traefik.enable=true"
