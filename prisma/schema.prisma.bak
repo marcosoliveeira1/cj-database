@@ -96,7 +96,7 @@ model Deal {
   assento_ascendente_portuga        String?   @map("assento_ascendente_portuga")
   possui_plano_familia              String?   @map("possui_plano_familia")
   codigo_produto                    String?   @map("codigo_produto") @db.Text
-  docs_emission                     String?   @map("docs_emission")
+  docs_emission                     String?   @map("docs_emission") @db.VarChar(255)
   processos_fechados_mika_automacao String?   @map("processos_fechados_mika_automacao") @db.Text
   docs_anexados_produto             String?   @map("docs_anexados_produto") @db.Text
   parente_italiano                  String?   @map("parente_italiano")
