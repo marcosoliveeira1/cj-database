@@ -46,7 +46,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     echo "✅ Verification Successful: Endpoint https://${APP_DOMAIN} is reachable and returned HTTP 2xx."
 
     echo "--- Running Prisma migration ---"
-    docker exec -it "node-app-${FINAL_ACTIVE_COLOR}" npx prisma migrate deploy
+    docker exec "node-app-${FINAL_ACTIVE_COLOR}" npx prisma migrate deploy
     exit 0
   fi
   RETRY_COUNT=$((RETRY_COUNT + 1))
