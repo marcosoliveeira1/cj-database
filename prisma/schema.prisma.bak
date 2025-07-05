@@ -145,7 +145,7 @@ model Person {
   firstName String? @map("first_name")
   id        Int     @id @map("id")
   labelIds  String? @map("label_ids")
-  lastName  String? @map("last_name")
+  lastName  String? @map("last_name") @db.VarChar(255)
   name      String? @db.VarChar(255)
   orgId     Int?    @map("org_id")
   ownerId   Int?    @map("owner_id")
