@@ -101,6 +101,7 @@ export const personFieldMappings: CustomFieldMappingType = {
   '875b67715607c1b4fdc9fc3da303b6e1f5ef3b4b': { prismaField: 'campo_indicacao', pipedriveType: 'varchar' },
   '2bdb625695c1c9cf384fe617bcb762dd6bed8430': { prismaField: 'id_buzzlead', pipedriveType: 'varchar' },
   '6b3ea8ec21a63d37e4100637c7caa8652d3d49ba': { prismaField: 'form_de_atualizacao_embaixador', pipedriveType: 'varchar' },
+  'f94d2285ad4b507ab75c4677f6ffe84f65826ca4': { prismaField: 'publico', pipedriveType: 'enum' },
 };
 
 export const organizationFieldMappings: CustomFieldMappingType = {

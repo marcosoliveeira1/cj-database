@@ -168,6 +168,7 @@ model Person {
   numero_de_assento          String?   @map("numero_de_assento")
   infos_alinhamento          String?   @map("infos_alinhamento") @db.Text
   job_title                  String?   @map("job_title")
+  publico                    String?
 
   campo_indicacao                String? @map("campo_indicacao") // New
   id_buzzlead                    String? @map("id_buzzlead") // New
