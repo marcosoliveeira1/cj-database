@@ -6,12 +6,15 @@ import { ConfigService } from '@nestjs/config';
 import { EnvSchema } from './config/env.schema';
 import { WinstonModule } from 'nest-winston';
 import { winstonLoggerOptions } from './logger';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     logger: WinstonModule.createLogger(winstonLoggerOptions),
   });
+
+  app.use(express.json({ limit: '10mb' }));
 
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService<EnvSchema>);
