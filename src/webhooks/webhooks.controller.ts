@@ -15,7 +15,7 @@ import {
 } from './dtos/pipedrive-webhook.zod';
 import { logError } from '@src/common/utils/logger.utils';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { JobsOptions, Queue } from 'bullmq';
 import {
   WEBHOOK_QUEUE_TOKEN,
   WebhookJobName,
@@ -121,7 +121,16 @@ export class WebhooksController {
     status: string;
     jobs_added: number;
   }> {
-    let jobs_added = 0;
+    this.logger.log(
+      `Received batch Pipedrive webhook request with ${payload.length} items.`,
+    );
+
+    const jobsToAdd: {
+      name: WebhookJobName;
+      data: PipedriveWebhookPayloadDto;
+      opts?: JobsOptions;
+    }[] = [];
+
     for (const item of payload) {
       const { entity, action, pipedriveId, rawEntity } =
         extractWebhookMetadata(item);
@@ -130,10 +139,10 @@ export class WebhooksController {
 
       if (!webhookEventId) {
         this.logger.error(
-          `Pipedrive Webhook (Entity: ${entity}, ID: ${pipedriveId}) is missing the 'meta.id' field, which is required for idempotency. Rejecting the request.`,
+          `A Pipedrive webhook item in the batch (Entity: ${entity}, ID: ${pipedriveId}) is missing 'meta.id', which is required for idempotency. Rejecting the entire batch.`,
         );
         throw new BadRequestException(
-          "Webhook payload missing 'meta.id' for idempotency key.",
+          "One or more webhook payloads in the batch are missing 'meta.id' for idempotency key.",
         );
       }
 
@@ -141,27 +150,31 @@ export class WebhooksController {
       const jobName = this.getJobNameForPayload(item);
 
       this.logger.log(
-        `Received Pipedrive Webhook for ${
+        `[BATCH] Preparing job for ${
           rawEntity || entity
-        } ${action} (Pipedrive ID: ${pipedriveId}). Adding job with Name: '${jobName}' and ID: '${jobId}' to BullMQ queue '${
-          this.webhookQueue.name
-        }'.`,
+        } ${action} (Pipedrive ID: ${pipedriveId}). Job Name: '${jobName}', Job ID: '${jobId}'.`,
       );
 
-      try {
-        await this.webhookQueue.add(jobName, item, { jobId });
-        jobs_added++;
-      } catch (error) {
-        logError(
-          `Error adding webhook job (Pipedrive ID: ${pipedriveId}, Job Name: ${jobName}) to BullMQ queue '${this.webhookQueue.name}'`,
-          error,
-        );
-        throw error;
-      }
+      jobsToAdd.push({ name: jobName, data: item, opts: { jobId } });
     }
-    return {
-      status: 'queued',
-      jobs_added,
-    };
+
+    try {
+      await this.webhookQueue.addBulk(jobsToAdd);
+
+      this.logger.log(
+        `Successfully added ${jobsToAdd.length} jobs in bulk to the queue '${this.webhookQueue.name}'.`,
+      );
+
+      return {
+        status: 'queued',
+        jobs_added: jobsToAdd.length,
+      };
+    } catch (error) {
+      logError(
+        `Error adding batch webhook jobs to BullMQ queue '${this.webhookQueue.name}'`,
+        error,
+      );
+      throw error;
+    }
   }
 }
