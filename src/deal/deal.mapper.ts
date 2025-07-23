@@ -25,11 +25,33 @@ export class DealMapper
   async toCreateInput(data: DealInput): Promise<Prisma.DealCreateInput> {
     const mappedFields = await this.mapCustomFields(data);
 
+    let organizationConnect:
+      | Prisma.OrganizationCreateNestedOneWithoutDealsInput
+      | undefined;
+    if (data.org_id && data.org_id > 0) {
+      organizationConnect = { connect: { id: data.org_id } };
+    } else if (data.org_id !== undefined && data.org_id !== null) {
+      this.logger.warn(
+        `Invalid org_id (${data.org_id}) provided for new Deal ID ${data.id}. Ignoring organization association.`,
+      );
+    }
+
+    let personConnect:
+      | Prisma.PersonCreateNestedOneWithoutDealsInput
+      | undefined;
+    if (data.person_id && data.person_id > 0) {
+      personConnect = { connect: { id: data.person_id } };
+    } else if (data.person_id !== undefined && data.person_id !== null) {
+      this.logger.warn(
+        `Invalid person_id (${data.person_id}) provided for new Deal ID ${data.id}. Ignoring person association.`,
+      );
+    }
+
     const createInput: Prisma.DealCreateInput = {
       ...this.baseInput(data),
       ...mappedFields,
-      organization: data.org_id ? { connect: { id: data.org_id } } : undefined,
-      person: data.person_id ? { connect: { id: data.person_id } } : undefined,
+      organization: organizationConnect,
+      person: personConnect,
     };
 
     return createInput;
@@ -42,18 +64,28 @@ export class DealMapper
       | Prisma.OrganizationUpdateOneWithoutDealsNestedInput
       | undefined;
     if ('org_id' in data) {
-      orgUpdate =
-        data.org_id === null
-          ? { disconnect: true }
-          : { connect: { id: data.org_id } };
+      if (data.org_id && data.org_id > 0) {
+        orgUpdate = { connect: { id: data.org_id } };
+      } else if (data.org_id === null) {
+        orgUpdate = { disconnect: true };
+      } else {
+        this.logger.warn(
+          `Invalid org_id (${data.org_id}) received for updating Deal ID ${data.id}. Ignoring organization association change.`,
+        );
+      }
     }
 
     let personUpdate: Prisma.PersonUpdateOneWithoutDealsNestedInput | undefined;
     if ('person_id' in data) {
-      personUpdate =
-        data.person_id === null
-          ? { disconnect: true }
-          : { connect: { id: data.person_id } };
+      if (data.person_id && data.person_id > 0) {
+        personUpdate = { connect: { id: data.person_id } };
+      } else if (data.person_id === null) {
+        personUpdate = { disconnect: true };
+      } else {
+        this.logger.warn(
+          `Invalid person_id (${data.person_id}) received for updating Deal ID ${data.id}. Ignoring person association change.`,
+        );
+      }
     }
 
     const updateInput: Prisma.DealUpdateInput = {
