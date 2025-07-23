@@ -93,7 +93,7 @@ model Deal {
   data_emissao_rg_contratante       String?   @map("data_emissao_rg_contratante")
   cep_contratante                   String?   @map("cep_contratante")
   endereco_contratante              String?   @map("endereco_contratante") @db.VarChar(255)
-  assento_ascendente_portuga        String?   @map("assento_ascendente_portuga")
+  assento_ascendente_portuga        String?   @map("assento_ascendente_portuga") @db.VarChar(255)
   possui_plano_familia              String?   @map("possui_plano_familia")
   codigo_produto                    String?   @map("codigo_produto") @db.Text
   docs_emission                     String?   @map("docs_emission") @db.VarChar(255)

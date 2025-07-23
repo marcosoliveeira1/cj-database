@@ -26,7 +26,7 @@ model Deal {
   wonTime               DateTime? @map("won_time")
   lostTime              DateTime? @map("lost_time")
   closeTime             DateTime? @map("close_time")
-  lostReason            String?   @map("lost_reason")
+  lostReason            String?   @map("lost_reason") @db.VarChar(255)
   visibleTo             String?   @map("visible_to")
   activitiesCount       Int?      @map("activities_count")
   doneActivitiesCount   Int?      @map("done_activities_count")
