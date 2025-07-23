@@ -12,7 +12,7 @@ datasource db {
 model Deal {
   // --- Standard Pipedrive Fields (Mapped) ---
   id                    Int       @id @map("id")
-  title                 String?   @map("title")
+  title                 String?   @map("title") @db.VarChar(255)
   creatorUserId         Int?      @map("creator_user_id")
   ownerId               Int?      @map("owner_id")
   pipelineId            Int?      @map("pipeline_id")
