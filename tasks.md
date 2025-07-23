@@ -1,0 +1,16 @@
+Tarefas para Implementação do Endpoint de Lote
+- [x] 1. Definir o DTO para o Payload em Lote
+  - Em src/webhooks/dtos/pipedrive-webhook.zod.ts, criar um novo schema Zod e DTO (BatchPipedriveWebhookPayloadDto) que valide um array de PipedriveWebhookPayloadSchema.
+- [x] 2. Implementar o Novo Endpoint no Controller
+  - Em src/webhooks/webhooks.controller.ts, adicionar um novo método handlePipedriveWebhookBatch para a rota POST /pipedrive/batch.
+  - Proteger o novo método com @UseGuards(BasicAuthGuard).
+  - Implementar a iteração sobre o array de payloads recebido no corpo da requisição.
+  - Dentro do loop, reutilizar a lógica de getJobNameForPayload e de adição de jobs à fila (webhookQueue.add) para cada item.
+  - Garantir que o jobId para idempotência continue sendo usado para cada job individual.
+  - Retornar uma resposta informativa, como { status: 'queued', jobs_added: count }.
+- [x] 3. Revisar a Estratégia de Upsert (e decidir não alterar)
+  - Analisar o arquivo src/webhooks/processing/strategies/base-upsert.strategy.ts.
+  - Confirmar que a lógica de comparação de pipedriveUpdateTime é suficiente e robusta.
+  - Adicionar um comentário no código para documentar a decisão de manter a lógica simples e eficaz.
+- [x] 4. Limpeza
+  - Remover o arquivo prisma/schema.prisma.bak, pois arquivos de backup não devem ser versionados.

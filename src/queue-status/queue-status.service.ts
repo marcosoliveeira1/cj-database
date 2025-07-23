@@ -5,7 +5,7 @@ import {
   ENTITY_SYNC_QUEUE_TOKEN,
   WEBHOOK_QUEUE_TOKEN,
 } from '@src/common/utils/queues.types';
-import { QueueCountsDto, QueueStatusResponseDto } from './dto/queue-status.dto';
+import { QueueStatusResponseDto } from './dto/queue-status.dto';
 
 @Injectable()
 export class QueueStatusService {

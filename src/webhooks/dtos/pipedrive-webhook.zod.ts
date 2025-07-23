@@ -137,7 +137,7 @@ const webhookMetaSchema = z
   })
   .passthrough();
 
-const PipedriveWebhookPayloadSchema = z
+export const PipedriveWebhookPayloadSchema = z
   .object({
     meta: webhookMetaSchema,
     data: z
@@ -156,4 +156,12 @@ const PipedriveWebhookPayloadSchema = z
 
 export class PipedriveWebhookPayloadDto extends createZodDto(
   PipedriveWebhookPayloadSchema,
+) {}
+
+export const BatchPipedriveWebhookPayloadSchema = z.array(
+  PipedriveWebhookPayloadSchema,
+);
+
+export class BatchPipedriveWebhookPayloadDto extends createZodDto(
+  BatchPipedriveWebhookPayloadSchema,
 ) {}

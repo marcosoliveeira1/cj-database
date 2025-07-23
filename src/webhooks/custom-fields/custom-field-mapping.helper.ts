@@ -160,7 +160,7 @@ export class CustomFieldMapperHelper {
       case 'time':
         return typeof value === 'object' && value !== null && 'value' in value
           ? parseDate((value as { value?: string })?.value)?.toISOString()
-          : parseDate(value)?.toISOString();
+          : parseDate(String(value))?.toISOString();
       case 'int':
       case 'user':
       case 'stage':
@@ -215,16 +215,19 @@ export class CustomFieldMapperHelper {
         if (
           typeof value !== 'object' ||
           value === null ||
-          !Array.isArray(value.values)
+          !('values' in value) ||
+          !Array.isArray((value as { values: unknown[] }).values)
         ) {
           this.logger.warn(
-            `Unexpected structure for 'set' type field. Expected { values: [] }, got: ${JSON.stringify(value)}`,
+            `Unexpected structure for 'set' type field. Expected { values: [] }, got: ${JSON.stringify(
+              value,
+            )}`,
           );
           return null;
         }
 
-        const labels = value.values
-          .map((item: any) => {
+        const labels = (value as { values: { id: number }[] }).values
+          .map((item) => {
             const itemId = item?.id;
             if (itemId === undefined) return null;
 

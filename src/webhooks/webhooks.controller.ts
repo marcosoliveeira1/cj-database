@@ -9,7 +9,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { BasicAuthGuard } from '@src/auth/guards/basic-auth.guard';
-import { PipedriveWebhookPayloadDto } from './dtos/pipedrive-webhook.zod';
+import {
+  PipedriveWebhookPayloadDto,
+  BatchPipedriveWebhookPayloadDto,
+} from './dtos/pipedrive-webhook.zod';
 import { logError } from '@src/common/utils/logger.utils';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -107,5 +110,58 @@ export class WebhooksController {
       );
       throw error;
     }
+  }
+
+  @Post('pipedrive/batch')
+  @UseGuards(BasicAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async handlePipedriveWebhookBatch(
+    @Body() payload: BatchPipedriveWebhookPayloadDto,
+  ): Promise<{
+    status: string;
+    jobs_added: number;
+  }> {
+    let jobs_added = 0;
+    for (const item of payload) {
+      const { entity, action, pipedriveId, rawEntity } =
+        extractWebhookMetadata(item);
+
+      const webhookEventId = item.meta?.id;
+
+      if (!webhookEventId) {
+        this.logger.error(
+          `Pipedrive Webhook (Entity: ${entity}, ID: ${pipedriveId}) is missing the 'meta.id' field, which is required for idempotency. Rejecting the request.`,
+        );
+        throw new BadRequestException(
+          "Webhook payload missing 'meta.id' for idempotency key.",
+        );
+      }
+
+      const jobId = `pipedrive-webhook-${webhookEventId}`;
+      const jobName = this.getJobNameForPayload(item);
+
+      this.logger.log(
+        `Received Pipedrive Webhook for ${
+          rawEntity || entity
+        } ${action} (Pipedrive ID: ${pipedriveId}). Adding job with Name: '${jobName}' and ID: '${jobId}' to BullMQ queue '${
+          this.webhookQueue.name
+        }'.`,
+      );
+
+      try {
+        await this.webhookQueue.add(jobName, item, { jobId });
+        jobs_added++;
+      } catch (error) {
+        logError(
+          `Error adding webhook job (Pipedrive ID: ${pipedriveId}, Job Name: ${jobName}) to BullMQ queue '${this.webhookQueue.name}'`,
+          error,
+        );
+        throw error;
+      }
+    }
+    return {
+      status: 'queued',
+      jobs_added,
+    };
   }
 }

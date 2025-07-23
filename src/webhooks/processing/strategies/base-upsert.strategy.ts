@@ -74,6 +74,10 @@ export class BaseUpsertStrategy<
     const incomingUpdateTime = new Date(data.update_time ?? '');
     const existingEntity = await this.repository.findById(pipedriveId);
 
+    // To prevent out-of-order webhook processing, we compare the `update_time` of the incoming
+    // payload with the `pipedriveUpdateTime` stored in our database. If the incoming update
+    // is older than or the same as the existing record, we skip the upsert. This simple
+    // yet effective strategy ensures that we don't overwrite newer data with stale information.
     if (
       data?.update_time &&
       existingEntity &&
