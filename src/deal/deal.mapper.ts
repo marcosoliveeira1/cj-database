@@ -106,6 +106,11 @@ export class DealMapper
 
   private parseDate(dateString: string | null | undefined): string | null {
     if (!dateString) return null;
-    return new Date(dateString).toISOString();
+    try {
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? null : date.toISOString();
+    } catch {
+      return null;
+    }
   }
 }
