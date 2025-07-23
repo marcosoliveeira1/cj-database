@@ -262,7 +262,7 @@ export class CustomFieldMapperHelper {
       case 'address':
         return typeof value === 'object' && value !== null
           ? (value as { formatted_address?: string }).formatted_address ||
-          JSON.stringify(value)
+              JSON.stringify(value)
           : String(value);
       case 'text':
       case 'varchar':

@@ -5,10 +5,7 @@ import {
   ENTITY_SYNC_QUEUE_TOKEN,
   WEBHOOK_QUEUE_TOKEN,
 } from '@src/common/utils/queues.types';
-import {
-  QueueCountsDto,
-  QueueStatusResponseDto,
-} from './dto/queue-status.dto';
+import { QueueCountsDto, QueueStatusResponseDto } from './dto/queue-status.dto';
 
 @Injectable()
 export class QueueStatusService {
@@ -19,7 +16,7 @@ export class QueueStatusService {
     private readonly webhookQueue: Queue,
     @InjectQueue(ENTITY_SYNC_QUEUE_TOKEN)
     private readonly entitySyncQueue: Queue,
-  ) { }
+  ) {}
 
   async getQueuesStatus(): Promise<QueueStatusResponseDto[]> {
     this.logger.debug('Fetching job counts for all registered queues.');
@@ -28,7 +25,7 @@ export class QueueStatusService {
 
     const statuses = await Promise.all(
       queues.map(async (queue) => {
-        const counts = (await queue.getJobCounts());
+        const counts = await queue.getJobCounts();
 
         this.logger.debug(`Counts for queue '${queue.name}':`, counts);
         return {

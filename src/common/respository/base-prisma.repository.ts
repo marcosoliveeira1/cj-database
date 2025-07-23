@@ -23,7 +23,8 @@ export abstract class BasePrismaRepository<
     }) => Promise<T | null>;
     create: (args: { data: C; select?: any; include?: any }) => Promise<T>;
   },
-> implements IRepository<T, W, C, U> {
+> implements IRepository<T, W, C, U>
+{
   protected readonly logger: Logger;
   protected abstract delegate: D;
   protected abstract entityName: string;
